@@ -1,6 +1,7 @@
 <script lang="ts">
   import GameMap from '$lib/components/GameMap.svelte';
   import { getCountryList } from '$lib/data/countries';
+  import { toast } from 'svelte-sonner';
   import {
     loadGameData,
     selectNextCountry,
@@ -17,7 +18,6 @@
   let gameData = $state<GameData>(loadGameData());
   let currentCode = $state<string | null>(selectNextCountry(gameData));
   let zoomStage = $state(currentCode ? getZoomStage(gameData, currentCode) : 0);
-  let lastResult = $state<'hit' | 'miss' | null>(null);
   let streak = $state(0);
   let totalHits = $state(0);
   let totalMisses = $state(0);
@@ -27,31 +27,40 @@
   function handleClickResult(hit: boolean) {
     if (!currentCode) return;
 
+    const answeredCode = currentCode;
+    const countryName = nameByCode[answeredCode] ?? answeredCode;
+
     if (hit) {
-      lastResult = 'hit';
       streak += 1;
       totalHits += 1;
-      recordHit(gameData, currentCode);
+      recordHit(gameData, answeredCode);
+      toast.success(`Correct! ${countryName}`, {
+        action: {
+          label: 'Skip in future',
+          onClick: () => {
+            const data = loadGameData();
+            toggleSkip(data, answeredCode);
+          }
+        }
+      });
     } else {
-      lastResult = 'miss';
       streak = 0;
       totalMisses += 1;
-      recordMiss(gameData, currentCode);
+      recordMiss(gameData, answeredCode);
+      toast.error(`Missed! ${countryName}`);
     }
-  }
 
-  function handleSkip() {
-    if (!currentCode) return;
-    toggleSkip(gameData, currentCode);
     nextRound();
   }
 
   function nextRound() {
-    lastResult = null;
     gameData = loadGameData();
     currentCode = selectNextCountry(gameData);
     zoomStage = currentCode ? getZoomStage(gameData, currentCode) : 0;
-    mapComponent?.reset();
+    console.log('nextRound — code:', currentCode, 'stage from state:', currentCode ? gameData.countries[currentCode]?.stage : null, 'zoomStage resolved:', zoomStage);
+    if (currentCode) {
+      mapComponent?.transitionTo(zoomStage, currentCode);
+    }
   }
 </script>
 
@@ -77,21 +86,6 @@
       onClickResult={handleClickResult}
     />
   </div>
-
-  <!-- Result bar -->
-  {#if lastResult}
-    <div class="flex items-center justify-center gap-4 px-4 py-3 {lastResult === 'hit' ? 'bg-green-900' : 'bg-red-900'}">
-      <span class="font-bold">{lastResult === 'hit' ? 'Correct!' : 'Missed!'}</span>
-      {#if lastResult === 'hit'}
-        <button onclick={handleSkip} class="text-sm px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
-          Skip in future
-        </button>
-      {/if}
-      <button onclick={nextRound} class="text-sm px-3 py-1 bg-blue-600 rounded hover:bg-blue-500">
-        Next
-      </button>
-    </div>
-  {/if}
 
   <!-- Stats bar -->
   <div class="flex items-center justify-between px-4 py-2 bg-gray-800 text-sm text-gray-400">
