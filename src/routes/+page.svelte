@@ -50,17 +50,17 @@
       toast.error(`Missed! ${countryName}`);
     }
 
-    nextRound();
-  }
-
-  function nextRound() {
+    // Advance game state immediately (prompt updates at top)
     gameData = loadGameData();
     currentCode = selectNextCountry(gameData);
     zoomStage = currentCode ? getZoomStage(gameData, currentCode) : 0;
-    console.log('nextRound — code:', currentCode, 'stage from state:', currentCode ? gameData.countries[currentCode]?.stage : null, 'zoomStage resolved:', zoomStage);
-    if (currentCode) {
-      mapComponent?.transitionTo(zoomStage, currentCode);
-    }
+
+    // Wait 1s for user to see their answer, then animate to next view
+    setTimeout(() => {
+      if (currentCode) {
+        mapComponent?.transitionTo(zoomStage, currentCode);
+      }
+    }, 1000);
   }
 </script>
 
