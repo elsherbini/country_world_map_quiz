@@ -2,6 +2,7 @@
   import GameMap from '$lib/components/GameMap.svelte';
   import { getCountryList } from '$lib/data/countries';
   import { toast } from 'svelte-sonner';
+  import { base } from '$app/paths';
   import {
     loadGameData,
     selectNextCountry,
@@ -24,6 +25,29 @@
 
   let mapComponent: ReturnType<typeof GameMap>;
 
+  function advanceToNext() {
+    gameData = loadGameData();
+    currentCode = selectNextCountry(gameData);
+    zoomStage = currentCode ? getZoomStage(gameData, currentCode) : 0;
+
+    setTimeout(() => {
+      if (currentCode) {
+        mapComponent?.transitionTo(zoomStage, currentCode);
+      }
+    }, 1000);
+  }
+
+  function skipAction(code: string, name: string): { label: string; onClick: () => void } {
+    return {
+      label: 'Skip in future',
+      onClick: () => {
+        const data = loadGameData();
+        toggleSkip(data, code);
+        toast.info(`${name} will be skipped`);
+      }
+    };
+  }
+
   function handleClickResult(hit: boolean) {
     if (!currentCode) return;
 
@@ -35,32 +59,24 @@
       totalHits += 1;
       recordHit(gameData, answeredCode);
       toast.success(`Correct! ${countryName}`, {
-        action: {
-          label: 'Skip in future',
-          onClick: () => {
-            const data = loadGameData();
-            toggleSkip(data, answeredCode);
-          }
-        }
+        duration: 5000,
+        action: skipAction(answeredCode, countryName)
       });
+      advanceToNext();
     } else {
       streak = 0;
       totalMisses += 1;
       recordMiss(gameData, answeredCode);
-      toast.error(`Missed! ${countryName}`);
+      toast.error(`Missed! Click on ${countryName} to continue`, {
+        duration: 10000,
+        action: skipAction(answeredCode, countryName)
+      });
+      // Don't advance — wait for retry
     }
+  }
 
-    // Advance game state immediately (prompt updates at top)
-    gameData = loadGameData();
-    currentCode = selectNextCountry(gameData);
-    zoomStage = currentCode ? getZoomStage(gameData, currentCode) : 0;
-
-    // Wait 1s for user to see their answer, then animate to next view
-    setTimeout(() => {
-      if (currentCode) {
-        mapComponent?.transitionTo(zoomStage, currentCode);
-      }
-    }, 1000);
+  function handleRetryComplete() {
+    advanceToNext();
   }
 </script>
 
@@ -74,7 +90,7 @@
         No countries to review!
       {/if}
     </h1>
-    <a href="/manage" class="text-sm text-gray-400 hover:text-white">Manage Countries</a>
+    <a href="{base}/manage" class="text-sm text-gray-400 hover:text-white">Manage Countries</a>
   </div>
 
   <!-- Map -->
@@ -84,6 +100,7 @@
       {zoomStage}
       targetCode={currentCode ?? ''}
       onClickResult={handleClickResult}
+      onRetryComplete={handleRetryComplete}
     />
   </div>
 
