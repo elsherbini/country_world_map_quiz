@@ -1,15 +1,23 @@
 <script lang="ts">
-  import { getCountryList } from '$lib/data/countries';
+  import { base } from '$app/paths';
+  import { getCountryList, ALL_REGIONS, REGION_LABELS, type Region } from '$lib/data/countries';
   import {
     loadGameData,
     toggleSkip,
+    toggleRegion,
     resetCountry,
+    resetAllCountries,
     type GameData,
     type CountryState
   } from '$lib/game-state';
 
   const countryList = getCountryList();
   let gameData = $state<GameData>(loadGameData());
+
+  function handleToggleRegion(region: Region) {
+    toggleRegion(gameData, region);
+    gameData = loadGameData();
+  }
 
   type Status = 'active' | 'skipped' | 'retired' | 'unseen';
 
@@ -27,8 +35,15 @@
     return state.bucket;
   }
 
+  let regionCounts = $derived.by(() => {
+    const counts: Record<Region, number> = {} as Record<Region, number>;
+    for (const r of ALL_REGIONS) counts[r] = 0;
+    for (const c of countryList) counts[c.region] += 1;
+    return counts;
+  });
+
   let grouped = $derived.by(() => {
-    const groups: Record<Status, { name: string; code: string; bucket: number | null }[]> = {
+    const groups: Record<Status, { name: string; code: string; region: Region; bucket: number | null }[]> = {
       active: [],
       skipped: [],
       retired: [],
@@ -50,13 +65,41 @@
     resetCountry(gameData, code);
     gameData = loadGameData();
   }
+
+  function handleResetAll() {
+    if (confirm('Reset all countries? This will clear all progress.')) {
+      resetAllCountries(gameData);
+      gameData = loadGameData();
+    }
+  }
 </script>
 
 <div class="min-h-screen bg-gray-900 text-white p-6">
   <div class="max-w-2xl mx-auto">
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-bold">Manage Countries</h1>
-      <a href="/" class="text-sm text-blue-400 hover:text-blue-300">Back to Game</a>
+      <div class="flex gap-4 items-center">
+        <button
+          onclick={handleResetAll}
+          class="text-sm px-3 py-1 bg-red-700 rounded hover:bg-red-600"
+        >
+          Reset All
+        </button>
+        <a href="{base}/" class="text-sm text-blue-400 hover:text-blue-300">Back to Game</a>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-6">
+      {#each ALL_REGIONS as region}
+        <button
+          onclick={() => handleToggleRegion(region)}
+          class="text-sm px-3 py-1 rounded-full transition-colors {gameData.regions[region]
+            ? 'bg-blue-600 text-white hover:bg-blue-500'
+            : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}"
+        >
+          {REGION_LABELS[region]} ({regionCounts[region]})
+        </button>
+      {/each}
     </div>
 
     {#each (['active', 'skipped', 'retired', 'unseen'] as const) as status}
@@ -68,12 +111,17 @@
           </h2>
           <div class="space-y-1">
             {#each items as item}
-              <div class="flex items-center justify-between px-3 py-2 bg-gray-800 rounded">
+              <div
+                class="flex items-center justify-between px-3 py-2 bg-gray-800 rounded {gameData.regions[item.region]
+                  ? ''
+                  : 'opacity-40'}"
+              >
                 <div>
                   <span>{item.name}</span>
                   {#if item.bucket !== null}
                     <span class="text-xs text-gray-500 ml-2">Bucket {item.bucket}</span>
                   {/if}
+                  <span class="text-xs text-gray-600 ml-2">{REGION_LABELS[item.region]}</span>
                 </div>
                 <div class="flex gap-2">
                   <button
