@@ -1,4 +1,4 @@
-import { getCountryList } from '$lib/data/countries';
+import { getCountryList, getRegion, type Region, ALL_REGIONS } from '$lib/data/countries';
 
 export interface CountryState {
 	bucket: number; // 1-7, 8 = retired
@@ -8,6 +8,7 @@ export interface CountryState {
 
 export interface GameData {
 	countries: Record<string, CountryState>;
+	regions: Record<Region, boolean>;
 }
 
 const STORAGE_KEY = 'geography-game';
@@ -15,14 +16,22 @@ const BUCKET_WEIGHTS = [0, 64, 32, 16, 8, 4, 2, 1]; // index 0 unused, buckets 1
 const MAX_BUCKET = 7;
 const MIN_BUCKET_1_COUNT = 5;
 
+function defaultRegions(): Record<Region, boolean> {
+	return Object.fromEntries(ALL_REGIONS.map((r) => [r, true])) as Record<Region, boolean>;
+}
+
 export function loadGameData(): GameData {
-	if (typeof window === 'undefined') return { countries: {} };
+	if (typeof window === 'undefined') return { countries: {}, regions: defaultRegions() };
 	const raw = localStorage.getItem(STORAGE_KEY);
-	if (!raw) return { countries: {} };
+	if (!raw) return { countries: {}, regions: defaultRegions() };
 	try {
-		return JSON.parse(raw) as GameData;
+		const parsed = JSON.parse(raw);
+		return {
+			countries: parsed.countries ?? {},
+			regions: parsed.regions ?? defaultRegions()
+		};
 	} catch {
-		return { countries: {} };
+		return { countries: {}, regions: defaultRegions() };
 	}
 }
 
@@ -36,14 +45,14 @@ export function getCountryState(data: GameData, code: string): CountryState | un
 
 function ensureMinBucket1(data: GameData): void {
 	const allCountries = getCountryList();
-	const bucket1Count = Object.values(data.countries).filter(
-		(c) => c.bucket === 1 && !c.skipped
+	const bucket1Count = Object.entries(data.countries).filter(
+		([code, c]) => c.bucket === 1 && !c.skipped && data.regions[getRegion(code)]
 	).length;
 
 	if (bucket1Count < MIN_BUCKET_1_COUNT) {
 		const unseenCodes = allCountries
-			.map((c) => c.code)
-			.filter((code) => !data.countries[code]);
+			.filter((c) => !data.countries[c.code] && data.regions[c.region])
+			.map((c) => c.code);
 
 		const needed = MIN_BUCKET_1_COUNT - bucket1Count;
 		const toAdd = shuffle(unseenCodes).slice(0, needed);
@@ -59,7 +68,11 @@ export function selectNextCountry(data: GameData): string | null {
 	saveGameData(data);
 
 	const eligible = Object.entries(data.countries).filter(
-		([, state]) => !state.skipped && state.bucket >= 1 && state.bucket <= MAX_BUCKET
+		([code, state]) =>
+			!state.skipped &&
+			state.bucket >= 1 &&
+			state.bucket <= MAX_BUCKET &&
+			data.regions[getRegion(code)]
 	);
 
 	if (eligible.length === 0) return null;
@@ -108,8 +121,19 @@ export function toggleSkip(data: GameData, code: string): void {
 	saveGameData(data);
 }
 
+export function toggleRegion(data: GameData, region: Region): void {
+	data.regions[region] = !data.regions[region];
+	saveGameData(data);
+}
+
 export function resetCountry(data: GameData, code: string): void {
 	delete data.countries[code];
+	saveGameData(data);
+}
+
+export function resetAllCountries(data: GameData): void {
+	data.countries = {};
+	data.regions = defaultRegions();
 	saveGameData(data);
 }
 
