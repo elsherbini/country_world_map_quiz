@@ -1,6 +1,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
-  import { getCountryList, ALL_REGIONS, REGION_LABELS, type Region } from '$lib/data/countries';
+  import { getCountryList, getSubdivisionList, ALL_REGIONS, REGION_LABELS, type Region } from '$lib/data/countries';
   import {
     loadGameData,
     toggleSkip,
@@ -12,6 +12,8 @@
   } from '$lib/game-state';
 
   const countryList = getCountryList();
+  const subdivisionList = getSubdivisionList();
+  const allTargets = [...countryList, ...subdivisionList];
   let gameData = $state<GameData>(loadGameData());
 
   function handleToggleRegion(region: Region) {
@@ -38,7 +40,7 @@
   let regionCounts = $derived.by(() => {
     const counts: Record<Region, number> = {} as Record<Region, number>;
     for (const r of ALL_REGIONS) counts[r] = 0;
-    for (const c of countryList) counts[c.region] += 1;
+    for (const c of allTargets) counts[c.region] += 1;
     return counts;
   });
 
@@ -49,7 +51,7 @@
       retired: [],
       unseen: []
     };
-    for (const c of countryList) {
+    for (const c of allTargets) {
       const status = getStatus(c.code);
       groups[status].push({ ...c, bucket: getBucket(c.code) });
     }
