@@ -49,6 +49,17 @@ export const REGION_LABELS: Record<Region, string> = {
 	'city-states': 'City-states'
 };
 
+export const REGION_COLORS: Record<Region, string> = {
+	'north-america': '#2dd4bf',
+	'south-america': '#fbbf24',
+	europe: '#60a5fa',
+	asia: '#fb7185',
+	africa: '#4ade80',
+	oceania: '#c084fc',
+	'small-islands': '#22d3ee',
+	'city-states': '#fb923c'
+};
+
 export const ALL_REGIONS: Region[] = [
 	'north-america',
 	'south-america',
