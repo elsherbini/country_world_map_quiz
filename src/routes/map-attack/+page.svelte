@@ -3,9 +3,10 @@
   import MapAttackMap from '$lib/components/MapAttackMap.svelte';
   import {
     getCountryList,
+    getSubdivisionList,
     ALL_REGIONS,
     REGION_LABELS,
-    REGION_COLORS,
+    SUBNATIONAL_PARENT_ISO_A2,
     type Region
   } from '$lib/data/countries';
 
@@ -13,7 +14,9 @@
   const MAX_LIVES = 3;
 
   const countryList = getCountryList();
-  const nameByCode = Object.fromEntries(countryList.map((c) => [c.code, c.name]));
+  const subdivisionList = getSubdivisionList();
+  const allTargets = [...countryList, ...subdivisionList];
+  const nameByCode = Object.fromEntries(allTargets.map((c) => [c.code, c.name]));
 
   // --- State ---
   type Phase = 'setup' | 'playing' | 'results';
@@ -50,10 +53,17 @@
     const counts: Record<Region, number> = {} as Record<Region, number>;
     for (const r of ALL_REGIONS) counts[r] = 0;
     for (const c of countryList) counts[c.region] += 1;
+    for (const s of subdivisionList) counts[s.region] += 1;
     return counts;
   });
 
   let anyRegionSelected = $derived(ALL_REGIONS.some((r) => selectedRegions[r]));
+
+  let activeSubnationalIsoA2s = $derived(
+    Object.entries(SUBNATIONAL_PARENT_ISO_A2)
+      .filter(([region]) => selectedRegions[region as Region])
+      .map(([, isoA2]) => isoA2 as string)
+  );
 
   // --- Game state ---
   let lives = $state(MAX_LIVES);
@@ -70,7 +80,7 @@
   let claimedCount = $derived(claimedCountries.size);
 
   function startGame() {
-    eligibleCountries = countryList
+    eligibleCountries = allTargets
       .filter((c) => selectedRegions[c.region])
       .map((c) => c.code);
     remainingCountries = shuffle([...eligibleCountries]);
@@ -150,10 +160,10 @@
         {#each ALL_REGIONS as region}
           <button
             onclick={() => toggleRegion(region)}
-            class="text-sm px-3 py-1.5 rounded-full transition-colors border-2"
-            style={selectedRegions[region]
-              ? `background-color: ${REGION_COLORS[region]}; border-color: ${REGION_COLORS[region]}; color: #111`
-              : `background-color: transparent; border-color: #4b5563; color: #9ca3af`}
+            class="text-sm px-3 py-1.5 rounded-full transition-colors border-2
+              {selectedRegions[region]
+                ? 'bg-blue-600 border-blue-600 text-white'
+                : 'bg-transparent border-gray-600 text-gray-400'}"
           >
             {REGION_LABELS[region]} ({regionCounts[region]})
           </button>
@@ -195,6 +205,7 @@
         bind:this={mapComponent}
         targetCode={currentTarget ?? ''}
         {claimedCountries}
+        {activeSubnationalIsoA2s}
         onCountryClick={handleCountryClick}
       />
     </div>
@@ -207,6 +218,7 @@
       <MapAttackMap
         targetCode=""
         {claimedCountries}
+        {activeSubnationalIsoA2s}
       />
       <!-- Overlay -->
       <div class="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
