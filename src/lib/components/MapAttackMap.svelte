@@ -151,11 +151,14 @@
     onCountryClick?.(code);
   }
 
+  let flashTimeout: ReturnType<typeof setTimeout>;
+
   export function flashWrong(code: string) {
+    clearTimeout(flashTimeout);
     flashCode = code;
     clickBlocked = true;
     drawMap();
-    setTimeout(() => {
+    flashTimeout = setTimeout(() => {
       flashCode = null;
       clickBlocked = false;
       drawMap();
@@ -196,7 +199,10 @@
     });
     observer.observe(containerEl);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearTimeout(flashTimeout);
+    };
   });
 </script>
 

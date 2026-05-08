@@ -61,10 +61,10 @@
   let currentTarget = $state<string | null>(null);
   let won = $state(false);
 
-  let eligibleCountries: string[] = [];
+  let eligibleCountries = $state<string[]>([]);
   let remainingCountries: string[] = [];
 
-  let mapComponent: ReturnType<typeof MapAttackMap>;
+  let mapComponent = $state<ReturnType<typeof MapAttackMap>>();
 
   let totalCountries = $derived(eligibleCountries.length);
   let claimedCount = $derived(claimedCountries.size);

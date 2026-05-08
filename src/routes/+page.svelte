@@ -44,7 +44,7 @@
         const data = loadGameData();
         toggleSkip(data, code);
         toast.dismiss();
-      toast.info(`${name} will be skipped`, { duration: 2000 });
+        toast.info(`${name} will be skipped`, { duration: 2000 });
       }
     };
   }
