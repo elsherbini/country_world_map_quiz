@@ -1,6 +1,6 @@
 <script lang="ts">
   import GameMap from '$lib/components/GameMap.svelte';
-  import { getCountryList } from '$lib/data/countries';
+  import { getCountryList, getSubdivisionList, SUBNATIONAL_PARENT_ISO_A2, type Region } from '$lib/data/countries';
   import { toast } from 'svelte-sonner';
   import { base } from '$app/paths';
   import {
@@ -14,7 +14,9 @@
   } from '$lib/game-state';
 
   const countryList = getCountryList();
-  const nameByCode = Object.fromEntries(countryList.map((c) => [c.code, c.name]));
+  const subdivisionList = getSubdivisionList();
+  const allTargets = [...countryList, ...subdivisionList];
+  const nameByCode = Object.fromEntries(allTargets.map((c) => [c.code, c.name]));
 
   let gameData = $state<GameData>(loadGameData());
   let currentCode = $state<string | null>(selectNextCountry(gameData));
@@ -22,6 +24,12 @@
   let streak = $state(0);
   let totalHits = $state(0);
   let totalMisses = $state(0);
+
+  let activeSubnationalIsoA2s = $derived(
+    Object.entries(SUBNATIONAL_PARENT_ISO_A2)
+      .filter(([region]) => gameData.regions[region as Region])
+      .map(([, isoA2]) => isoA2 as string)
+  );
 
   let mapComponent: ReturnType<typeof GameMap>;
 
@@ -105,6 +113,7 @@
       bind:this={mapComponent}
       {zoomStage}
       targetCode={currentCode ?? ''}
+      {activeSubnationalIsoA2s}
       onClickResult={handleClickResult}
       onRetryComplete={handleRetryComplete}
     />
