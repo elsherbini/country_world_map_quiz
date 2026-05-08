@@ -43,7 +43,8 @@
       onClick: () => {
         const data = loadGameData();
         toggleSkip(data, code);
-        toast.info(`${name} will be skipped`);
+        toast.dismiss();
+      toast.info(`${name} will be skipped`, { duration: 2000 });
       }
     };
   }
@@ -58,8 +59,9 @@
       streak += 1;
       totalHits += 1;
       recordHit(gameData, answeredCode);
+      toast.dismiss();
       toast.success(`Correct! ${countryName}`, {
-        duration: 5000,
+        duration: 3000,
         action: skipAction(answeredCode, countryName)
       });
       advanceToNext();
@@ -67,8 +69,9 @@
       streak = 0;
       totalMisses += 1;
       recordMiss(gameData, answeredCode);
+      toast.dismiss();
       toast.error(`Missed! Click on ${countryName} to continue`, {
-        duration: 10000,
+        duration: 5000,
         action: skipAction(answeredCode, countryName)
       });
       // Don't advance — wait for retry
@@ -90,7 +93,10 @@
         No countries to review!
       {/if}
     </h1>
-    <a href="{base}/manage" class="text-sm text-gray-400 hover:text-white">Manage Countries</a>
+    <div class="flex gap-4">
+      <a href="{base}/map-attack" class="text-sm text-gray-400 hover:text-white">Map Attack</a>
+      <a href="{base}/manage" class="text-sm text-gray-400 hover:text-white">Manage Countries</a>
+    </div>
   </div>
 
   <!-- Map -->

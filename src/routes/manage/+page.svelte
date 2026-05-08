@@ -85,6 +85,7 @@
         >
           Reset All
         </button>
+        <a href="{base}/map-attack" class="text-sm text-blue-400 hover:text-blue-300">Map Attack</a>
         <a href="{base}/" class="text-sm text-blue-400 hover:text-blue-300">Back to Game</a>
       </div>
     </div>
