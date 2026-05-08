@@ -1,4 +1,5 @@
-import { getCountryList, getRegion, type Region, ALL_REGIONS } from '$lib/data/countries';
+import { getCountryList, getSubdivisionList, getRegion, getSubnationalRegion, type Region, ALL_REGIONS, SUBNATIONAL_REGIONS } from '$lib/data/countries';
+import { isSubdivisionCode } from '$lib/data/subdivisions';
 
 export interface CountryState {
 	bucket: number; // 1-7, 8 = retired
@@ -17,7 +18,9 @@ const MAX_BUCKET = 7;
 const MIN_BUCKET_1_COUNT = 5;
 
 function defaultRegions(): Record<Region, boolean> {
-	return Object.fromEntries(ALL_REGIONS.map((r) => [r, true])) as Record<Region, boolean>;
+	return Object.fromEntries(
+		ALL_REGIONS.map((r) => [r, !SUBNATIONAL_REGIONS.includes(r)])
+	) as Record<Region, boolean>;
 }
 
 export function loadGameData(): GameData {
@@ -26,9 +29,11 @@ export function loadGameData(): GameData {
 	if (!raw) return { countries: {}, regions: defaultRegions() };
 	try {
 		const parsed = JSON.parse(raw);
+		const defaults = defaultRegions();
+		const regions = { ...defaults, ...(parsed.regions ?? {}) };
 		return {
 			countries: parsed.countries ?? {},
-			regions: parsed.regions ?? defaultRegions()
+			regions
 		};
 	} catch {
 		return { countries: {}, regions: defaultRegions() };
@@ -43,14 +48,25 @@ export function getCountryState(data: GameData, code: string): CountryState | un
 	return data.countries[code];
 }
 
+function getRegionForCode(code: string): Region {
+	if (isSubdivisionCode(code)) {
+		const isoA2 = code.split('-')[0];
+		return getSubnationalRegion(isoA2) ?? 'small-islands';
+	}
+	return getRegion(code);
+}
+
 function ensureMinBucket1(data: GameData): void {
-	const allCountries = getCountryList();
+	const allTargets = [
+		...getCountryList(),
+		...getSubdivisionList()
+	];
 	const bucket1Count = Object.entries(data.countries).filter(
-		([code, c]) => c.bucket === 1 && !c.skipped && data.regions[getRegion(code)]
+		([code, c]) => c.bucket === 1 && !c.skipped && data.regions[getRegionForCode(code)]
 	).length;
 
 	if (bucket1Count < MIN_BUCKET_1_COUNT) {
-		const unseenCodes = allCountries
+		const unseenCodes = allTargets
 			.filter((c) => !data.countries[c.code] && data.regions[c.region])
 			.map((c) => c.code);
 
@@ -72,7 +88,7 @@ export function selectNextCountry(data: GameData): string | null {
 			!state.skipped &&
 			state.bucket >= 1 &&
 			state.bucket <= MAX_BUCKET &&
-			data.regions[getRegion(code)]
+			data.regions[getRegionForCode(code)]
 	);
 
 	if (eligible.length === 0) return null;
