@@ -54,20 +54,34 @@
       ]);
   }
 
+  function lightenColor(hex: string, amount: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const nr = Math.min(255, r + amount);
+    const ng = Math.min(255, g + amount);
+    const nb = Math.min(255, b + amount);
+    return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
+  }
+
   function getFillColor(code: string): string {
     if (flashCode === code) return '#ef4444';
-    if (claimedCountries.has(code)) return REGION_COLORS[getRegion(code)];
-    if (hoveredCode === code) return '#9ca3af';
-    return '#6b7280';
+    if (claimedCountries.has(code)) {
+      const regionColor = REGION_COLORS[getRegion(code)];
+      if (hoveredCode === code) return lightenColor(regionColor, 40);
+      return regionColor;
+    }
+    if (hoveredCode === code) return '#d1d5db';
+    return '#9ca3af';
   }
 
   function getStrokeWidth(code: string): number {
-    if (hoveredCode === code && !claimedCountries.has(code)) return 1.5;
+    if (hoveredCode === code) return claimedCountries.has(code) ? 1 : 1.5;
     return 0.5;
   }
 
   function getStrokeColor(code: string): string {
-    if (hoveredCode === code && !claimedCountries.has(code)) return '#d1d5db';
+    if (hoveredCode === code) return claimedCountries.has(code) ? '#e5e7eb' : '#f3f4f6';
     return '#374151';
   }
 
