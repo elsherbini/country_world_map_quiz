@@ -6,6 +6,7 @@
     type CountryProperties,
   } from '$lib/data/countries';
   import { subdivisions, isSubdivisionCode } from '$lib/data/subdivisions';
+  import { lakes } from '$lib/data/lakes';
   import type { Feature, Geometry } from 'geojson';
 
   let {
@@ -118,6 +119,14 @@
         ctx.lineWidth = 0.3;
         ctx.stroke();
       }
+    }
+
+    // Pass 3: Draw lakes on top to mask land
+    for (const feature of lakes.features) {
+      ctx.beginPath();
+      pathGen(feature);
+      ctx.fillStyle = '#111827';
+      ctx.fill();
     }
   }
 
