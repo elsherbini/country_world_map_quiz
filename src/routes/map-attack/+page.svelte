@@ -100,7 +100,7 @@
       mapComponent?.redraw();
       pickNextTarget();
     } else {
-      // Wrong
+      // Wrong — lose a life, re-queue the target, pick a new one
       lives -= 1;
       mapComponent?.flashWrong(code);
       if (lives <= 0) {
@@ -109,6 +109,11 @@
           won = false;
           phase = 'results';
         }, 600);
+      } else {
+        // Put current target back into the pool (not at the end, so it's not immediate)
+        const insertIdx = Math.floor(Math.random() * remainingCountries.length);
+        remainingCountries.splice(insertIdx, 0, currentTarget!);
+        pickNextTarget();
       }
     }
   }
