@@ -2,16 +2,19 @@
   import { onMount } from 'svelte';
   import * as d3 from 'd3';
   import { countries, type CountryProperties } from '$lib/data/countries';
+  import { subdivisions, isSubdivisionCode } from '$lib/data/subdivisions';
   import type { Feature, Geometry } from 'geojson';
 
   let {
     zoomStage = 0,
     targetCode = '',
+    activeSubnationalIsoA2s = [] as string[],
     onClickResult,
     onRetryComplete
   }: {
     zoomStage?: number;
     targetCode?: string;
+    activeSubnationalIsoA2s?: string[];
     onClickResult?: (hit: boolean) => void;
     onRetryComplete?: () => void;
   } = $props();
@@ -46,7 +49,7 @@
     useClipExtent: false
   });
 
-  function interiorPoint(feature: Feature<Geometry, CountryProperties>): [number, number] {
+  function interiorPoint(feature: Feature<Geometry, Record<string, unknown>>): [number, number] {
     // Try the overall centroid first
     const centroid = d3.geoCentroid(feature);
     if (d3.geoContains(feature, centroid)) return centroid;
@@ -87,6 +90,13 @@
     return f.properties.ISO_A3_EH !== '-99' ? f.properties.ISO_A3_EH : f.properties.ISO_A3;
   }
 
+  function findTargetFeature(code: string) {
+    if (isSubdivisionCode(code)) {
+      return subdivisions.features.find((f) => f.properties.iso_3166_2 === code);
+    }
+    return countries.features.find((f) => getCodeForFeature(f) === code);
+  }
+
   function computeParams(stage: number, code: string): ProjParams {
     const projection = d3.geoNaturalEarth1();
 
@@ -100,7 +110,7 @@
       };
     }
 
-    const targetFeature = countries.features.find((f) => getCodeForFeature(f) === code);
+    const targetFeature = findTargetFeature(code);
     if (!targetFeature) {
       projection.fitExtent([[10, 10], [width - 10, height - 10]], countries);
       return {
@@ -113,6 +123,9 @@
 
     const centroid = d3.geoCentroid(targetFeature);
     let kmExtent = stage === 1 ? 2000 : 630;
+    if (isSubdivisionCode(code)) {
+      kmExtent = stage === 0 ? 2000 : stage === 1 ? 630 : 200;
+    }
 
     // For stage 2, don't zoom in absurdly on large countries
     // Use the largest polygon's extent (ignores distant territories)
@@ -218,6 +231,23 @@
       ctx.stroke();
     }
 
+    // Draw subdivision boundaries on top
+    if (activeSubnationalIsoA2s.length > 0) {
+      for (const feature of subdivisions.features) {
+        if (!activeSubnationalIsoA2s.includes(feature.properties.iso_a2)) continue;
+        ctx.beginPath();
+        pathGen(feature);
+        const code = feature.properties.iso_3166_2;
+        if (highlightCode === code) {
+          ctx.fillStyle = highlightHit ? '#22c55e' : '#ef4444';
+          ctx.fill();
+        }
+        ctx.strokeStyle = '#6b7280';
+        ctx.lineWidth = 0.3;
+        ctx.stroke();
+      }
+    }
+
     if (clickGeo) {
       const px = proj(clickGeo.lonLat);
       if (px) {
@@ -303,7 +333,7 @@
       ]);
     }
 
-    const targetFeature = countries.features.find((f) => getCodeForFeature(f) === targetCode);
+    const targetFeature = findTargetFeature(targetCode);
     if (!targetFeature) return false;
 
     // Check 1: Do any circle sample points fall inside the country?
@@ -365,7 +395,7 @@
       onClickResult?.(true);
     } else {
       // Miss — enter retry mode: show red circle, green target, highlight country green
-      const targetFeature = countries.features.find((f) => getCodeForFeature(f) === targetCode);
+      const targetFeature = findTargetFeature(targetCode);
       clickGeo = clickCoords ? { lonLat: clickCoords as [number, number], hit: false } : null;
       highlightCode = targetCode;
       highlightHit = true;
