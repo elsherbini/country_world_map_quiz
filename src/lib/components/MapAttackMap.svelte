@@ -4,18 +4,19 @@
   import {
     countries,
     type CountryProperties,
-    getRegion,
-    REGION_COLORS
   } from '$lib/data/countries';
+  import { subdivisions, isSubdivisionCode } from '$lib/data/subdivisions';
   import type { Feature, Geometry } from 'geojson';
 
   let {
     targetCode = '',
     claimedCountries = new Set<string>(),
+    activeSubnationalIsoA2s = [] as string[],
     onCountryClick
   }: {
     targetCode?: string;
     claimedCountries?: Set<string>;
+    activeSubnationalIsoA2s?: string[];
     onCountryClick?: (code: string) => void;
   } = $props();
 
@@ -54,22 +55,14 @@
       ]);
   }
 
-  function lightenColor(hex: string, amount: number): string {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    const nr = Math.min(255, r + amount);
-    const ng = Math.min(255, g + amount);
-    const nb = Math.min(255, b + amount);
-    return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
-  }
+  const CLAIMED_COLOR = '#4ade80';
+  const CLAIMED_HOVER_COLOR = '#86efac';
 
   function getFillColor(code: string): string {
     if (flashCode === code) return '#ef4444';
     if (claimedCountries.has(code)) {
-      const regionColor = REGION_COLORS[getRegion(code)];
-      if (hoveredCode === code) return lightenColor(regionColor, 40);
-      return regionColor;
+      if (hoveredCode === code) return CLAIMED_HOVER_COLOR;
+      return CLAIMED_COLOR;
     }
     if (hoveredCode === code) return '#d1d5db';
     return '#9ca3af';
@@ -94,6 +87,7 @@
 
     ctx.clearRect(0, 0, width, height);
 
+    // Pass 1: Draw country polygons
     for (const feature of countries.features) {
       const code = getCodeForFeature(feature);
       ctx.beginPath();
@@ -104,13 +98,57 @@
       ctx.lineWidth = getStrokeWidth(code);
       ctx.stroke();
     }
+
+    // Pass 2: Draw subdivision boundaries on top
+    if (activeSubnationalIsoA2s.length > 0) {
+      for (const feature of subdivisions.features) {
+        if (!activeSubnationalIsoA2s.includes(feature.properties.iso_a2)) continue;
+        const code = feature.properties.iso_3166_2;
+        ctx.beginPath();
+        pathGen(feature);
+
+        // If this subdivision is claimed, hovered, or flashing, fill it
+        if (claimedCountries.has(code) || hoveredCode === code || flashCode === code) {
+          ctx.fillStyle = getFillColor(code);
+          ctx.fill();
+        }
+
+        // Always draw subdivision borders (subtle)
+        ctx.strokeStyle = '#6b7280';
+        ctx.lineWidth = 0.3;
+        ctx.stroke();
+      }
+    }
   }
 
-  function findCountryAtPoint(x: number, y: number): string | null {
+  function findTargetAtPoint(x: number, y: number): string | null {
     const proj = getTransformedProjection();
     const lonLat = proj.invert?.([x, y]);
     if (!lonLat) return null;
 
+    // Check subdivisions first (most specific)
+    if (activeSubnationalIsoA2s.length > 0) {
+      for (const feature of subdivisions.features) {
+        if (!activeSubnationalIsoA2s.includes(feature.properties.iso_a2)) continue;
+        if (d3.geoContains(feature, lonLat)) {
+          return feature.properties.iso_3166_2;
+        }
+      }
+    }
+
+    // Fall back to country level
+    for (const feature of countries.features) {
+      if (d3.geoContains(feature, lonLat)) {
+        return getCodeForFeature(feature);
+      }
+    }
+    return null;
+  }
+
+  function findCountryCodeAtPoint(x: number, y: number): string | null {
+    const proj = getTransformedProjection();
+    const lonLat = proj.invert?.([x, y]);
+    if (!lonLat) return null;
     for (const feature of countries.features) {
       if (d3.geoContains(feature, lonLat)) {
         return getCodeForFeature(feature);
@@ -123,7 +161,7 @@
     const rect = containerEl.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const code = findCountryAtPoint(x, y);
+    const code = findTargetAtPoint(x, y);
     if (code !== hoveredCode) {
       hoveredCode = code;
       drawMap();
@@ -143,10 +181,19 @@
     const rect = containerEl.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const code = findCountryAtPoint(x, y);
+    const code = findTargetAtPoint(x, y);
 
     if (!code) return; // clicked ocean
     if (claimedCountries.has(code)) return; // already claimed
+
+    // If clicked a subdivision but target is a country, resolve to country level
+    if (isSubdivisionCode(code) && !isSubdivisionCode(targetCode)) {
+      const parentCountryCode = findCountryCodeAtPoint(x, y);
+      if (parentCountryCode && !claimedCountries.has(parentCountryCode)) {
+        onCountryClick?.(parentCountryCode);
+        return;
+      }
+    }
 
     onCountryClick?.(code);
   }
