@@ -1,5 +1,6 @@
 import countriesGeoJSON from './countries.json';
 import type { FeatureCollection, Geometry } from 'geojson';
+import { subdivisions } from './subdivisions';
 
 export interface CountryProperties {
 	NAME: string;
@@ -36,7 +37,11 @@ export type Region =
 	| 'africa'
 	| 'oceania'
 	| 'small-islands'
-	| 'city-states';
+	| 'city-states'
+	| 'us-states'
+	| 'china-provinces'
+	| 'india-states'
+	| 'canada-provinces';
 
 export const REGION_LABELS: Record<Region, string> = {
 	'north-america': 'North America',
@@ -46,9 +51,14 @@ export const REGION_LABELS: Record<Region, string> = {
 	africa: 'Africa',
 	oceania: 'Oceania',
 	'small-islands': 'Small Islands',
-	'city-states': 'City-states'
+	'city-states': 'City-states',
+	'us-states': 'US States',
+	'china-provinces': 'Chinese Provinces',
+	'india-states': 'Indian States',
+	'canada-provinces': 'Canadian Provinces'
 };
 
+// TODO: Remove once MapAttackMap and map-attack page are updated
 export const REGION_COLORS: Record<Region, string> = {
 	'north-america': '#2dd4bf',
 	'south-america': '#fbbf24',
@@ -57,7 +67,11 @@ export const REGION_COLORS: Record<Region, string> = {
 	africa: '#4ade80',
 	oceania: '#c084fc',
 	'small-islands': '#22d3ee',
-	'city-states': '#fb923c'
+	'city-states': '#fb923c',
+	'us-states': '#4ade80',
+	'china-provinces': '#4ade80',
+	'india-states': '#4ade80',
+	'canada-provinces': '#4ade80'
 };
 
 export const ALL_REGIONS: Region[] = [
@@ -68,7 +82,11 @@ export const ALL_REGIONS: Region[] = [
 	'africa',
 	'oceania',
 	'small-islands',
-	'city-states'
+	'city-states',
+	'us-states',
+	'china-provinces',
+	'india-states',
+	'canada-provinces'
 ];
 
 const REGION_OVERRIDES: Record<string, Region> = {
@@ -185,4 +203,56 @@ export function getRegion(code: string): Region {
 	});
 	if (!feature) return 'small-islands';
 	return CONTINENT_TO_REGION[feature.properties.CONTINENT] ?? 'small-islands';
+}
+
+/** Maps subnational region to parent country ISO alpha-2 code */
+export const SUBNATIONAL_PARENT_ISO_A2: Partial<Record<Region, string>> = {
+	'us-states': 'US',
+	'china-provinces': 'CN',
+	'india-states': 'IN',
+	'canada-provinces': 'CA'
+};
+
+/** Maps parent country ISO alpha-2 code to subnational region */
+const ISO_A2_TO_SUBNATIONAL_REGION: Record<string, Region> = {
+	US: 'us-states',
+	CN: 'china-provinces',
+	IN: 'india-states',
+	CA: 'canada-provinces'
+};
+
+/** All subnational region keys */
+export const SUBNATIONAL_REGIONS: Region[] = [
+	'us-states',
+	'china-provinces',
+	'india-states',
+	'canada-provinces'
+];
+
+/** Get subnational region for a subdivision by its parent country ISO alpha-2 code */
+export function getSubnationalRegion(isoA2: string): Region | undefined {
+	return ISO_A2_TO_SUBNATIONAL_REGION[isoA2];
+}
+
+const ISO_A2_TO_A3: Record<string, string> = {
+	US: 'USA',
+	CN: 'CHN',
+	IN: 'IND',
+	CA: 'CAN'
+};
+
+export function getSubdivisionList(): { name: string; code: string; region: Region; parentCountryCode: string }[] {
+	return subdivisions.features
+		.map((f) => {
+			const region = getSubnationalRegion(f.properties.iso_a2);
+			if (!region) return null;
+			return {
+				name: f.properties.name,
+				code: f.properties.iso_3166_2,
+				region,
+				parentCountryCode: ISO_A2_TO_A3[f.properties.iso_a2] ?? f.properties.iso_a2
+			};
+		})
+		.filter((x): x is NonNullable<typeof x> => x !== null)
+		.sort((a, b) => a.name.localeCompare(b.name));
 }
