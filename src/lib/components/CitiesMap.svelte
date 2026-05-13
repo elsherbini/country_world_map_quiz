@@ -7,13 +7,11 @@
   import type { Feature, Geometry } from 'geojson';
 
   let {
-    targetCity = '',
     claimedCities = new Set<string>(),
     renderMode = 'dots' as 'dots' | 'boundaries',
     eligibleCityKeys = new Set<string>(),
     onCityClick
   }: {
-    targetCity?: string;
     claimedCities?: Set<string>;
     renderMode?: 'dots' | 'boundaries';
     eligibleCityKeys?: Set<string>;

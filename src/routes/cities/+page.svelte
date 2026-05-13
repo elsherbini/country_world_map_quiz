@@ -297,7 +297,6 @@
     <div class="flex-1 relative overflow-hidden">
       <CitiesMap
         bind:this={mapComponent}
-        targetCity={currentTarget ?? ''}
         {claimedCities}
         renderMode={settings.renderMode}
         {eligibleCityKeys}
@@ -311,7 +310,6 @@
   <div class="flex flex-col h-screen bg-gray-900 text-white">
     <div class="flex-1 relative overflow-hidden">
       <CitiesMap
-        targetCity=""
         {claimedCities}
         renderMode={settings.renderMode}
         {eligibleCityKeys}
