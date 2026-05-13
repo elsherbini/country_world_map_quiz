@@ -41,7 +41,13 @@ export type Region =
 	| 'us-states'
 	| 'china-provinces'
 	| 'india-states'
-	| 'canada-provinces';
+	| 'canada-provinces'
+	| 'mexico-states'
+	| 'uk-regions'
+	| 'france-regions'
+	| 'spain-communities'
+	| 'italy-regions'
+	| 'germany-states';
 
 export const REGION_LABELS: Record<Region, string> = {
 	'north-america': 'North America',
@@ -55,7 +61,13 @@ export const REGION_LABELS: Record<Region, string> = {
 	'us-states': 'US States',
 	'china-provinces': 'Chinese Provinces',
 	'india-states': 'Indian States',
-	'canada-provinces': 'Canadian Provinces'
+	'canada-provinces': 'Canadian Provinces',
+	'mexico-states': 'Mexican States',
+	'uk-regions': 'UK Regions',
+	'france-regions': 'French Regions',
+	'spain-communities': 'Spanish Communities',
+	'italy-regions': 'Italian Regions',
+	'germany-states': 'German States'
 };
 
 // TODO: Remove once MapAttackMap and map-attack page are updated
@@ -71,7 +83,13 @@ export const REGION_COLORS: Record<Region, string> = {
 	'us-states': '#4ade80',
 	'china-provinces': '#4ade80',
 	'india-states': '#4ade80',
-	'canada-provinces': '#4ade80'
+	'canada-provinces': '#4ade80',
+	'mexico-states': '#4ade80',
+	'uk-regions': '#4ade80',
+	'france-regions': '#4ade80',
+	'spain-communities': '#4ade80',
+	'italy-regions': '#4ade80',
+	'germany-states': '#4ade80'
 };
 
 export const ALL_REGIONS: Region[] = [
@@ -86,7 +104,13 @@ export const ALL_REGIONS: Region[] = [
 	'us-states',
 	'china-provinces',
 	'india-states',
-	'canada-provinces'
+	'canada-provinces',
+	'mexico-states',
+	'uk-regions',
+	'france-regions',
+	'spain-communities',
+	'italy-regions',
+	'germany-states'
 ];
 
 const REGION_OVERRIDES: Record<string, Region> = {
@@ -210,7 +234,13 @@ export const SUBNATIONAL_PARENT_ISO_A2: Partial<Record<Region, string>> = {
 	'us-states': 'US',
 	'china-provinces': 'CN',
 	'india-states': 'IN',
-	'canada-provinces': 'CA'
+	'canada-provinces': 'CA',
+	'mexico-states': 'MX',
+	'uk-regions': 'GB',
+	'france-regions': 'FR',
+	'spain-communities': 'ES',
+	'italy-regions': 'IT',
+	'germany-states': 'DE'
 };
 
 /** Maps parent country ISO alpha-2 code to subnational region */
@@ -218,7 +248,13 @@ const ISO_A2_TO_SUBNATIONAL_REGION: Record<string, Region> = {
 	US: 'us-states',
 	CN: 'china-provinces',
 	IN: 'india-states',
-	CA: 'canada-provinces'
+	CA: 'canada-provinces',
+	MX: 'mexico-states',
+	GB: 'uk-regions',
+	FR: 'france-regions',
+	ES: 'spain-communities',
+	IT: 'italy-regions',
+	DE: 'germany-states'
 };
 
 /** All subnational region keys */
@@ -226,7 +262,13 @@ export const SUBNATIONAL_REGIONS: Region[] = [
 	'us-states',
 	'china-provinces',
 	'india-states',
-	'canada-provinces'
+	'canada-provinces',
+	'mexico-states',
+	'uk-regions',
+	'france-regions',
+	'spain-communities',
+	'italy-regions',
+	'germany-states'
 ];
 
 /** Get subnational region for a subdivision by its parent country ISO alpha-2 code */
@@ -238,7 +280,13 @@ const ISO_A2_TO_A3: Record<string, string> = {
 	US: 'USA',
 	CN: 'CHN',
 	IN: 'IND',
-	CA: 'CAN'
+	CA: 'CAN',
+	MX: 'MEX',
+	GB: 'GBR',
+	FR: 'FRA',
+	ES: 'ESP',
+	IT: 'ITA',
+	DE: 'DEU'
 };
 
 export function getSubdivisionList(): { name: string; code: string; region: Region; parentCountryCode: string }[] {
