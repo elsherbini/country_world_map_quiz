@@ -43,7 +43,6 @@ export type Region =
 	| 'india-states'
 	| 'canada-provinces'
 	| 'mexico-states'
-	| 'uk-regions'
 	| 'france-regions'
 	| 'spain-communities'
 	| 'italy-regions'
@@ -63,7 +62,6 @@ export const REGION_LABELS: Record<Region, string> = {
 	'india-states': 'Indian States',
 	'canada-provinces': 'Canadian Provinces',
 	'mexico-states': 'Mexican States',
-	'uk-regions': 'UK Regions',
 	'france-regions': 'French Regions',
 	'spain-communities': 'Spanish Communities',
 	'italy-regions': 'Italian Regions',
@@ -85,7 +83,6 @@ export const REGION_COLORS: Record<Region, string> = {
 	'india-states': '#4ade80',
 	'canada-provinces': '#4ade80',
 	'mexico-states': '#4ade80',
-	'uk-regions': '#4ade80',
 	'france-regions': '#4ade80',
 	'spain-communities': '#4ade80',
 	'italy-regions': '#4ade80',
@@ -106,7 +103,6 @@ export const ALL_REGIONS: Region[] = [
 	'india-states',
 	'canada-provinces',
 	'mexico-states',
-	'uk-regions',
 	'france-regions',
 	'spain-communities',
 	'italy-regions',
@@ -236,7 +232,6 @@ export const SUBNATIONAL_PARENT_ISO_A2: Partial<Record<Region, string>> = {
 	'india-states': 'IN',
 	'canada-provinces': 'CA',
 	'mexico-states': 'MX',
-	'uk-regions': 'GB',
 	'france-regions': 'FR',
 	'spain-communities': 'ES',
 	'italy-regions': 'IT',
@@ -250,7 +245,6 @@ const ISO_A2_TO_SUBNATIONAL_REGION: Record<string, Region> = {
 	IN: 'india-states',
 	CA: 'canada-provinces',
 	MX: 'mexico-states',
-	GB: 'uk-regions',
 	FR: 'france-regions',
 	ES: 'spain-communities',
 	IT: 'italy-regions',
@@ -264,7 +258,6 @@ export const SUBNATIONAL_REGIONS: Region[] = [
 	'india-states',
 	'canada-provinces',
 	'mexico-states',
-	'uk-regions',
 	'france-regions',
 	'spain-communities',
 	'italy-regions',
@@ -282,7 +275,6 @@ const ISO_A2_TO_A3: Record<string, string> = {
 	IN: 'IND',
 	CA: 'CAN',
 	MX: 'MEX',
-	GB: 'GBR',
 	FR: 'FRA',
 	ES: 'ESP',
 	IT: 'ITA',
