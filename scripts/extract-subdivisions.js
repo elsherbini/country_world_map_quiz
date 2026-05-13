@@ -2,7 +2,12 @@
 
 import { readFileSync, writeFileSync } from 'fs';
 
-const TARGET_COUNTRIES = ['US', 'CN', 'IN', 'CA'];
+const TARGET_COUNTRIES = ['US', 'CN', 'IN', 'CA', 'MX', 'GB', 'FR', 'ES', 'IT', 'DE'];
+
+const EXCLUDE_CODES = [
+	'US-DC',    // District of Columbia
+	'CN-X01~'   // Paracel Islands
+];
 
 const inputPath = process.argv[2] || '/tmp/ne_10m_admin_1_states_provinces.geojson';
 const outputPath = process.argv[3] || 'src/lib/data/subdivisions.json';
@@ -12,7 +17,8 @@ const data = JSON.parse(readFileSync(inputPath, 'utf-8'));
 
 const filtered = data.features.filter((f) => {
 	const iso_a2 = f.properties.iso_a2;
-	return TARGET_COUNTRIES.includes(iso_a2);
+	const iso_3166_2 = f.properties.iso_3166_2;
+	return TARGET_COUNTRIES.includes(iso_a2) && !EXCLUDE_CODES.includes(iso_3166_2);
 });
 
 const stripped = filtered.map((f) => ({
@@ -41,4 +47,8 @@ console.log(`File size: ${(json.length / 1024 / 1024).toFixed(2)} MB`);
 for (const code of TARGET_COUNTRIES) {
 	const count = stripped.filter((f) => f.properties.iso_a2 === code).length;
 	console.log(`  ${code}: ${count} subdivisions`);
+}
+
+if (EXCLUDE_CODES.length > 0) {
+	console.log(`Excluded: ${EXCLUDE_CODES.join(', ')}`);
 }
