@@ -103,6 +103,7 @@
     </h1>
     <div class="flex gap-4">
       <a href="{base}/map-attack" class="text-sm text-gray-400 hover:text-white">Map Attack</a>
+      <a href="{base}/cities" class="text-sm text-gray-400 hover:text-white">Cities</a>
       <a href="{base}/manage" class="text-sm text-gray-400 hover:text-white">Manage Countries</a>
     </div>
   </div>
