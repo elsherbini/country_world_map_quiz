@@ -7,7 +7,6 @@ const TARGET_COUNTRIES = ['US', 'CN', 'IN', 'CA', 'MX', 'FR', 'ES', 'IT', 'DE'];
 const EXCLUDE_CODES = [
 	'US-DC',     // District of Columbia
 	'CN-X01~',   // Paracel Islands
-	'MX-DIF',    // Distrito Federal (Mexico City)
 	'MX-X01~'    // null entry
 ];
 
