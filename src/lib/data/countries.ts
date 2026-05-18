@@ -198,8 +198,6 @@ const REGION_OVERRIDES: Record<string, Region> = {
 	JEY: 'small-islands',
 	GGY: 'small-islands',
 	IMN: 'small-islands',
-	// Greenland
-	GRL: 'small-islands',
 	// Antarctica
 	ATA: 'small-islands'
 };
