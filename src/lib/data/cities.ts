@@ -1,10 +1,9 @@
-import citiesGeoJSON from './cities.json';
-import type { FeatureCollection, Geometry } from 'geojson';
+import citiesData from './cities.json';
 
 export type CityContinent = 'North America' | 'South America' | 'Europe' | 'Asia' | 'Africa' | 'Oceania';
-export type PopulationTier = '>10M' | '10-5M' | '5M-2.5M' | '2.5M-1M';
+export type PopulationTier = '>25M' | '15-25M' | '5-15M' | '2-5M';
 
-export interface CityProperties {
+export interface CityData {
 	name: string;
 	country: string;
 	population: number;
@@ -12,12 +11,9 @@ export interface CityProperties {
 	populationTier: PopulationTier;
 	lat: number;
 	lon: number;
-	[key: string]: unknown;
 }
 
-export type CitiesFC = FeatureCollection<Geometry, CityProperties>;
-
-export const cities: CitiesFC = citiesGeoJSON as unknown as CitiesFC;
+export const cities: CityData[] = citiesData as unknown as CityData[];
 
 export const CITY_CONTINENTS: CityContinent[] = [
 	'North America',
@@ -28,13 +24,13 @@ export const CITY_CONTINENTS: CityContinent[] = [
 	'Oceania'
 ];
 
-export const POPULATION_TIERS: PopulationTier[] = ['>10M', '10-5M', '5M-2.5M', '2.5M-1M'];
+export const POPULATION_TIERS: PopulationTier[] = ['>25M', '15-25M', '5-15M', '2-5M'];
 
 export const POPULATION_TIER_LABELS: Record<PopulationTier, string> = {
-	'>10M': '>10M',
-	'10-5M': '10-5M',
-	'5M-2.5M': '5M-2.5M',
-	'2.5M-1M': '2.5M-1M'
+	'>25M': '>25M',
+	'15-25M': '15-25M',
+	'5-15M': '5-15M',
+	'2-5M': '2-5M'
 };
 
 export const CONTINENT_COLORS: Record<CityContinent, string> = {
@@ -63,15 +59,15 @@ export interface CityEntry {
 }
 
 export function getCityList(): CityEntry[] {
-	return cities.features.map((f) => ({
-		name: f.properties.name,
-		country: f.properties.country,
-		key: cityKey(f.properties.name, f.properties.country),
-		population: f.properties.population,
-		continent: f.properties.continent as CityContinent,
-		populationTier: f.properties.populationTier as PopulationTier,
-		lat: f.properties.lat,
-		lon: f.properties.lon
+	return cities.map((c) => ({
+		name: c.name,
+		country: c.country,
+		key: cityKey(c.name, c.country),
+		population: c.population,
+		continent: c.continent as CityContinent,
+		populationTier: c.populationTier as PopulationTier,
+		lat: c.lat,
+		lon: c.lon
 	}));
 }
 

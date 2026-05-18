@@ -151,7 +151,7 @@
     <div class="max-w-md w-full">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Map Attack</h1>
-        <a href="{base}/" class="text-sm text-gray-400 hover:text-white">Back to Game</a>
+        <a href="{base}/" class="text-sm text-gray-400 hover:text-white">← Back to Learning Mode</a>
       </div>
 
       <p class="text-gray-400 mb-4">Select regions to include, then identify every country. You have 3 lives.</p>
@@ -186,16 +186,29 @@
   <div class="flex flex-col h-screen bg-gray-900 text-white">
     <!-- HUD -->
     <div class="flex items-center justify-between px-4 py-2 bg-black/60 z-10">
-      <div class="text-lg font-semibold">
-        Click on: <span class="text-blue-400">{currentTarget ? nameByCode[currentTarget] ?? currentTarget : ''}</span>
+      <div class="flex items-center gap-4">
+        <a href="{base}/" class="text-sm text-gray-400 hover:text-white whitespace-nowrap">← Back to Learning Mode</a>
+        <div class="text-lg font-semibold">
+          Click on: <span class="text-blue-400">{currentTarget ? nameByCode[currentTarget] ?? currentTarget : ''}</span>
+        </div>
       </div>
       <div class="text-sm text-gray-300">
         {claimedCount} / {totalCountries}
       </div>
-      <div class="flex gap-1">
-        {#each Array(MAX_LIVES) as _, i}
-          <span class="text-xl">{i < lives ? '❤️' : '🩶'}</span>
-        {/each}
+      <div class="flex items-center gap-3">
+        <div class="flex gap-1">
+          {#each Array(MAX_LIVES) as _, i}
+            <span class="text-xl">{i < lives ? '❤️' : '🩶'}</span>
+          {/each}
+        </div>
+        <button
+          onclick={changeRegions}
+          aria-label="Change regions"
+          title="Change regions"
+          class="text-gray-400 hover:text-white text-xl leading-none p-1"
+        >
+          ↻
+        </button>
       </div>
     </div>
 
@@ -248,7 +261,7 @@
               href="{base}/"
               class="w-full py-2 rounded-lg bg-gray-700 hover:bg-gray-600 block text-center"
             >
-              Back to Game
+              ← Back to Learning Mode
             </a>
           </div>
         </div>

@@ -499,7 +499,6 @@ const EXPECTED_COORDS_RAW = {
 	Osaka: [34.69, 135.50],
 	Leon: [21.12, -101.68],
 	Auckland: [-36.85, 174.76],
-	Moscow: [55.76, 37.62],
 };
 
 // Build normalized expected coords map
@@ -509,10 +508,76 @@ for (const [key, value] of Object.entries(EXPECTED_COORDS_RAW)) {
 }
 
 // ---------------------------------------------------------------------------
-// 7. Match & merge
+// 7. Fallback coordinates for cities not in GeoJSON
+// ---------------------------------------------------------------------------
+const FALLBACK_COORDS = {
+	'Chongqing::China': [29.56, 106.55],
+	'New Taipei City::Taiwan': [25.01, 121.47],
+	'Abuja::Nigeria': [9.07, 7.49],
+	'Yokohama::Japan': [35.44, 139.64],
+	'Quezon City::Philippines': [14.65, 121.05],
+	'Gazipur::Bangladesh': [24.00, 90.42],
+	'Wenzhou::China': [27.99, 120.70],
+	'Bekasi::Indonesia': [-6.24, 106.99],
+	'Manaus::Brazil': [-3.12, -60.03],
+	'Zhuhai::China': [22.28, 113.57],
+	'Tangerang::Indonesia': [-6.18, 106.63],
+	'Depok::Indonesia': [-6.40, 106.82],
+	'Monrovia::Liberia': [6.30, -10.80],
+	'Caloocan::Philippines': [14.65, 120.97],
+	'Navi Mumbai::India': [19.04, 73.02],
+	'Zunyi::China': [27.69, 106.91],
+	'Kunshan::China': [31.38, 120.95],
+	'Nouakchott::Mauritania': [18.09, -15.98],
+	'Putian::China': [25.44, 119.01],
+	'Kawasaki::Japan': [35.52, 139.70],
+	'Yiwu::China': [29.32, 120.08],
+	'Quanzhou::China': [24.91, 118.59],
+	'Cixi::China': [30.17, 121.25],
+	'Jinjiang::China': [24.82, 118.57],
+	'South Tangerang::Indonesia': [-6.29, 106.72],
+	'Taizhou::China': [28.66, 121.43],
+	'Shangrao::China': [28.45, 117.97],
+	'Zhangjiakou::China': [40.78, 114.87],
+	'Jiangyin::China': [31.91, 120.26],
+	'Saitama::Japan': [35.86, 139.65],
+	'Taguig::Philippines': [14.52, 121.05],
+	'Guarulhos::Brazil': [-23.46, -46.53],
+	'Shubra El Kheima::Egypt': [30.13, 31.24],
+	'Zapopan::Mexico': [20.72, -103.38],
+	'Vasai-Virar::India': [19.43, 72.82],
+	'Mira-Bhayandar::India': [19.30, 72.85],
+	'Batam::Indonesia': [1.05, 104.03],
+	'Nelson Mandela Bay::South Africa': [-33.80, 25.49],
+	'Bandar Lampung::Indonesia': [-5.45, 105.26],
+	'Naypyidaw::Myanmar': [19.76, 96.13],
+	'Bobo-Dioulasso::Burkina Faso': [11.18, -4.30],
+	'Luzhou::China': [28.87, 105.44],
+	'Yueyang::China': [29.37, 113.09],
+	'Touba::Senegal': [14.85, -15.88],
+	'Suqian::China': [33.96, 118.28],
+	"Lu\u2019an::China": [31.73, 116.47],
+	"Lu'an::China": [31.73, 116.47],
+	'Bhiwandi::India': [19.30, 73.06],
+	'Yongin::South Korea': [37.24, 127.18],
+	'Zhangjiagang::China': [31.87, 120.54],
+	'Changzhi::China': [36.19, 113.12],
+	'Goyang::South Korea': [37.66, 126.84],
+	'Jinhua::China': [29.11, 119.64],
+	'Zhaoqing::China': [23.05, 112.46],
+	'Matola::Mozambique': [-25.96, 32.46],
+	'Changwon::South Korea': [35.23, 128.68],
+	'Santo Domingo Este::Dominican Republic': [18.49, -69.86],
+	'Yuyao::China': [30.05, 121.15],
+	"Rui\u2019an::China": [27.78, 120.63],
+	"Rui'an::China": [27.78, 120.63],
+};
+
+// ---------------------------------------------------------------------------
+// 8. Match & merge (dots only — no geometry in output)
 // ---------------------------------------------------------------------------
 const matched = [];
-const unmatched = [];
+const unmatchedCities = [];
 
 function distanceSq(lat1, lon1, lat2, lon2) {
 	return (lat1 - lat2) ** 2 + (lon1 - lon2) ** 2;
@@ -546,6 +611,22 @@ function pickBestFeature(candidates, normalizedName) {
 
 for (const city of cities) {
 	const normalizedName = normalizeKey(city.name);
+	const fallbackKey = `${city.name}::${city.country}`;
+
+	// Check fallback coords first (for cities not in GeoJSON)
+	if (FALLBACK_COORDS[fallbackKey]) {
+		const [lat, lon] = FALLBACK_COORDS[fallbackKey];
+		matched.push({
+			name: city.name,
+			country: city.country,
+			population: city.population,
+			continent: city.continent,
+			populationTier: getTier(city.population),
+			lat,
+			lon
+		});
+		continue;
+	}
 
 	// Determine GeoJSON name via override or direct uppercase
 	let geoName;
@@ -558,7 +639,7 @@ for (const city of cities) {
 	const candidates = geoByName[geoName];
 
 	if (!candidates || candidates.length === 0) {
-		unmatched.push(city);
+		unmatchedCities.push(city);
 		continue;
 	}
 
@@ -566,49 +647,44 @@ for (const city of cities) {
 
 	const centroid = computeCentroid(feature.geometry);
 	if (!centroid) {
-		unmatched.push(city);
+		unmatchedCities.push(city);
 		continue;
 	}
 
 	matched.push({
-		type: 'Feature',
-		properties: {
-			name: city.name,
-			country: city.country,
-			population: city.population,
-			continent: city.continent,
-			populationTier: getTier(city.population),
-			lat: parseFloat(centroid[1].toFixed(4)),
-			lon: parseFloat(centroid[0].toFixed(4))
-		},
-		geometry: feature.geometry
+		name: city.name,
+		country: city.country,
+		population: city.population,
+		continent: city.continent,
+		populationTier: getTier(city.population),
+		lat: parseFloat(centroid[1].toFixed(4)),
+		lon: parseFloat(centroid[0].toFixed(4))
 	});
 }
 
 // ---------------------------------------------------------------------------
-// 8. Output
+// 9. Output (simple JSON array — no GeoJSON geometry)
 // ---------------------------------------------------------------------------
 console.log(`\nMatched: ${matched.length} cities`);
-if (unmatched.length > 0) {
-	console.warn(`\nUnmatched (${unmatched.length}):`);
-	for (const c of unmatched) {
+if (unmatchedCities.length > 0) {
+	console.warn(`\nUnmatched (${unmatchedCities.length}):`);
+	for (const c of unmatchedCities) {
 		console.warn(`  ${c.name} (${c.country}, pop ${c.population.toLocaleString()})`);
 	}
 }
 
-const output = { type: 'FeatureCollection', features: matched };
-const json = JSON.stringify(output);
+const json = JSON.stringify(matched);
 writeFileSync(outputPath, json);
 
 console.log(`\nWrote ${matched.length} features to ${outputPath}`);
 console.log(`File size: ${(json.length / 1024 / 1024).toFixed(2)} MB`);
 
 for (const tier of ['>10M', '10-5M', '5M-2.5M', '2.5M-1M']) {
-	const count = matched.filter((f) => f.properties.populationTier === tier).length;
+	const count = matched.filter((f) => f.populationTier === tier).length;
 	console.log(`  ${tier}: ${count} cities`);
 }
 
 for (const cont of ['Asia', 'Africa', 'Europe', 'North America', 'South America', 'Oceania']) {
-	const count = matched.filter((f) => f.properties.continent === cont).length;
+	const count = matched.filter((f) => f.continent === cont).length;
 	console.log(`  ${cont}: ${count} cities`);
 }

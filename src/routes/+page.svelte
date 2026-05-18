@@ -1,6 +1,13 @@
 <script lang="ts">
   import GameMap from '$lib/components/GameMap.svelte';
-  import { getCountryList, getSubdivisionList, SUBNATIONAL_PARENT_ISO_A2, type Region } from '$lib/data/countries';
+  import {
+    getCountryList,
+    getSubdivisionList,
+    ALL_REGIONS,
+    REGION_LABELS,
+    SUBNATIONAL_PARENT_ISO_A2,
+    type Region
+  } from '$lib/data/countries';
   import { toast } from 'svelte-sonner';
   import { base } from '$app/paths';
   import {
@@ -9,6 +16,7 @@
     recordHit,
     recordMiss,
     toggleSkip,
+    toggleRegion,
     getZoomStage,
     type GameData
   } from '$lib/game-state';
@@ -30,6 +38,20 @@
       .filter(([region]) => gameData.regions[region as Region])
       .map(([, isoA2]) => isoA2 as string)
   );
+
+  let regionCounts = $derived.by(() => {
+    const counts: Record<Region, number> = {} as Record<Region, number>;
+    for (const r of ALL_REGIONS) counts[r] = 0;
+    for (const c of allTargets) counts[c.region] += 1;
+    return counts;
+  });
+
+  let showRegions = $state(false);
+
+  function handleToggleRegion(region: Region) {
+    toggleRegion(gameData, region);
+    gameData = loadGameData();
+  }
 
   let mapComponent: ReturnType<typeof GameMap>;
 
@@ -102,6 +124,12 @@
       {/if}
     </h1>
     <div class="flex gap-4">
+      <button
+        onclick={() => (showRegions = true)}
+        class="text-sm text-gray-400 hover:text-white"
+      >
+        Regions
+      </button>
       <a href="{base}/map-attack" class="text-sm text-gray-400 hover:text-white">Map Attack</a>
       <a href="{base}/cities" class="text-sm text-gray-400 hover:text-white">Cities</a>
       <a href="{base}/manage" class="text-sm text-gray-400 hover:text-white">Manage Countries</a>
@@ -110,6 +138,32 @@
 
   <!-- Map -->
   <div class="flex-1 relative overflow-hidden">
+    {#if showRegions}
+      <div class="absolute inset-0 bg-gray-900 z-10 flex items-center justify-center p-6">
+        <div class="max-w-md w-full">
+          <h2 class="text-2xl font-bold mb-6 text-center">Select regions</h2>
+          <div class="flex flex-wrap gap-2 justify-center mb-6">
+            {#each ALL_REGIONS as region}
+              <button
+                onclick={() => handleToggleRegion(region)}
+                class="text-sm px-3 py-1.5 rounded-full transition-colors border-2
+                  {gameData.regions[region]
+                    ? 'bg-blue-600 border-blue-600 text-white'
+                    : 'bg-transparent border-gray-600 text-gray-400'}"
+              >
+                {REGION_LABELS[region]} ({regionCounts[region]})
+              </button>
+            {/each}
+          </div>
+          <button
+            onclick={() => (showRegions = false)}
+            class="w-full py-3 rounded-lg font-semibold text-lg bg-blue-600 hover:bg-blue-500 text-white"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    {/if}
     <GameMap
       bind:this={mapComponent}
       {zoomStage}

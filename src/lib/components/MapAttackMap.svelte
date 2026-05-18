@@ -37,6 +37,25 @@
     return f.properties.ISO_A3_EH !== '-99' ? f.properties.ISO_A3_EH : f.properties.ISO_A3;
   }
 
+  // Target-aware click magnet for tiny regions like Monaco, Ceuta, Vatican.
+  // Features whose lon/lat span is below the threshold get a screen-space
+  // boost radius around their centroid — applied only when they're the target.
+  const SMALL_SPAN_DEG = 1.5;
+  const SMALL_BOOST_PX = 25;
+  const smallCentroids = new Map<string, [number, number]>();
+  for (const f of countries.features) {
+    const [[lon0, lat0], [lon1, lat1]] = d3.geoBounds(f);
+    if (Math.max(lon1 - lon0, lat1 - lat0) < SMALL_SPAN_DEG) {
+      smallCentroids.set(getCodeForFeature(f), d3.geoCentroid(f));
+    }
+  }
+  for (const f of subdivisions.features) {
+    const [[lon0, lat0], [lon1, lat1]] = d3.geoBounds(f);
+    if (Math.max(lon1 - lon0, lat1 - lat0) < SMALL_SPAN_DEG) {
+      smallCentroids.set(f.properties.iso_3166_2, d3.geoCentroid(f));
+    }
+  }
+
   function buildProjection(): d3.GeoProjection {
     return d3.geoNaturalEarth1().fitExtent(
       [[10, 10], [width - 10, height - 10]],
@@ -132,6 +151,21 @@
 
   function findTargetAtPoint(x: number, y: number): string | null {
     const proj = getTransformedProjection();
+
+    // Boost: if the target is a small feature, accept clicks within
+    // SMALL_BOOST_PX of its projected centroid before falling through.
+    if (targetCode) {
+      const cent = smallCentroids.get(targetCode);
+      if (cent) {
+        const projCent = proj(cent);
+        if (projCent) {
+          const dx = projCent[0] - x;
+          const dy = projCent[1] - y;
+          if (Math.hypot(dx, dy) < SMALL_BOOST_PX) return targetCode;
+        }
+      }
+    }
+
     const lonLat = proj.invert?.([x, y]);
     if (!lonLat) return null;
 

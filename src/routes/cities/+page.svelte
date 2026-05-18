@@ -20,12 +20,14 @@
   // --- State ---
   type Phase = 'setup' | 'playing' | 'results';
   let phase = $state<Phase>('setup');
+  let showAbout = $state(false);
+
+  const sortedCities = [...allCities].sort((a, b) => b.population - a.population);
 
   // Settings (persisted)
   interface CitySettings {
     continents: Record<CityContinent, boolean>;
     tiers: Record<PopulationTier, boolean>;
-    renderMode: 'dots' | 'boundaries';
     showCountry: boolean;
   }
 
@@ -34,7 +36,13 @@
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultSettings();
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      const defs = defaultSettings();
+      return {
+        continents: { ...defs.continents, ...parsed.continents },
+        tiers: { ...defs.tiers, ...parsed.tiers },
+        showCountry: parsed.showCountry ?? defs.showCountry
+      };
     } catch {
       return defaultSettings();
     }
@@ -44,7 +52,6 @@
     return {
       continents: Object.fromEntries(CITY_CONTINENTS.map((c) => [c, true])) as Record<CityContinent, boolean>,
       tiers: Object.fromEntries(POPULATION_TIERS.map((t) => [t, true])) as Record<PopulationTier, boolean>,
-      renderMode: 'dots',
       showCountry: true
     };
   }
@@ -62,11 +69,6 @@
 
   function toggleTier(t: PopulationTier) {
     settings.tiers[t] = !settings.tiers[t];
-    saveSettings();
-  }
-
-  function toggleRenderMode() {
-    settings.renderMode = settings.renderMode === 'dots' ? 'boundaries' : 'dots';
     saveSettings();
   }
 
@@ -203,12 +205,82 @@
   }
 </script>
 
+{#if showAbout}
+  <div class="fixed inset-0 bg-gray-900 text-white z-50 overflow-y-auto">
+    <div class="max-w-3xl mx-auto p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">City Population Data</h2>
+        <button
+          onclick={() => (showAbout = false)}
+          class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 font-semibold"
+        >
+          Done
+        </button>
+      </div>
+
+      <div class="space-y-3 text-gray-300 mb-8">
+        <p>
+          Populations come from the <strong>UN World Urbanization Prospects 2025</strong>
+          (released November 2025), produced jointly with the European Commission's Joint Research Centre.
+        </p>
+        <p>
+          An urban agglomeration is defined as <strong>contiguous land at ≥1,500 persons/km² density</strong>,
+          identified from satellite imagery (the Global Human Settlement Layer). This single satellite-derived
+          definition is applied consistently to every country — it does not depend on administrative boundaries,
+          which makes Tokyo's, Karachi's and Lagos's metros directly comparable.
+        </p>
+        <p>
+          Coordinates are population-weighted centroids of each urban center. Cities are included if their 2025
+          population is at least 2 million.
+        </p>
+        <p class="text-sm text-gray-400">
+          Side effect of the methodology: US, Canadian and Australian metros come out smaller than the MSA figures
+          most Americans quote, because suburban density falls below the threshold. New York is 14M (not 20M);
+          Chicago, Boston, Atlanta, Dallas and others are smaller or absent. The trade-off is global consistency.
+        </p>
+      </div>
+
+      <h3 class="text-lg font-semibold mb-3">All cities ({sortedCities.length})</h3>
+      <table class="w-full text-sm">
+        <thead class="text-gray-400 text-left border-b border-gray-700">
+          <tr>
+            <th class="py-2 pr-4 w-12">#</th>
+            <th class="py-2 pr-4">City</th>
+            <th class="py-2 pr-4">Country</th>
+            <th class="py-2 text-right">Population</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each sortedCities as city, i}
+            <tr class="border-b border-gray-800">
+              <td class="py-1.5 pr-4 text-gray-500">{i + 1}</td>
+              <td class="py-1.5 pr-4">{city.name}</td>
+              <td class="py-1.5 pr-4 text-gray-400">{city.country}</td>
+              <td class="py-1.5 text-right tabular-nums">{city.population.toLocaleString()}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{/if}
+
 {#if phase === 'setup'}
   <div class="min-h-screen bg-gray-900 text-white flex items-center justify-center p-6">
     <div class="max-w-md w-full">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold">Cities</h1>
-        <a href="{base}/" class="text-sm text-gray-400 hover:text-white">Back to Game</a>
+        <div class="flex items-center gap-3">
+          <h1 class="text-2xl font-bold">Cities</h1>
+          <button
+            onclick={() => (showAbout = true)}
+            aria-label="About the population data"
+            title="About the population data"
+            class="w-6 h-6 rounded-full border border-gray-500 text-gray-400 hover:text-white hover:border-white text-sm leading-none"
+          >
+            ?
+          </button>
+        </div>
+        <a href="{base}/" class="text-sm text-gray-400 hover:text-white">← Back to Learning Mode</a>
       </div>
 
       <p class="text-gray-400 mb-4">Select continents and population ranges, then identify every city. You have 3 lives.</p>
@@ -248,12 +320,6 @@
       <!-- Toggles -->
       <div class="flex gap-4 mb-4">
         <button
-          onclick={toggleRenderMode}
-          class="text-sm px-3 py-1.5 rounded-lg transition-colors bg-gray-700 hover:bg-gray-600"
-        >
-          Mode: {settings.renderMode === 'dots' ? 'Dots' : 'Boundaries'}
-        </button>
-        <button
           onclick={toggleShowCountry}
           class="text-sm px-3 py-1.5 rounded-lg transition-colors bg-gray-700 hover:bg-gray-600"
         >
@@ -286,10 +352,20 @@
       <div class="text-sm text-gray-300">
         {claimedCount} / {totalCities}
       </div>
-      <div class="flex gap-1">
-        {#each Array(MAX_LIVES) as _, i}
-          <span class="text-xl">{i < lives ? '❤️' : '🩶'}</span>
-        {/each}
+      <div class="flex items-center gap-3">
+        <div class="flex gap-1">
+          {#each Array(MAX_LIVES) as _, i}
+            <span class="text-xl">{i < lives ? '❤️' : '🩶'}</span>
+          {/each}
+        </div>
+        <button
+          onclick={() => (showAbout = true)}
+          aria-label="About the population data"
+          title="About the population data"
+          class="w-6 h-6 rounded-full border border-gray-500 text-gray-400 hover:text-white hover:border-white text-sm leading-none"
+        >
+          ?
+        </button>
       </div>
     </div>
 
@@ -298,7 +374,6 @@
       <CitiesMap
         bind:this={mapComponent}
         {claimedCities}
-        renderMode={settings.renderMode}
         {eligibleCityKeys}
         onCityClick={handleCityClick}
       />
@@ -311,7 +386,6 @@
     <div class="flex-1 relative overflow-hidden">
       <CitiesMap
         {claimedCities}
-        renderMode={settings.renderMode}
         {eligibleCityKeys}
       />
       <!-- Overlay -->
