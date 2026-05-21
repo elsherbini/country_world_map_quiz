@@ -1,1 +1,172 @@
 @import "tailwindcss";
+
+/* Semantic UI tokens — each maps to a per-theme custom property below.
+   `inline` makes utilities emit `var(--canvas)` directly so they re-resolve
+   when the [data-theme] attribute changes. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-raised-hover: var(--raised-hover);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-edge: var(--edge);
+  --color-success: var(--success);
+  --color-success-hover: var(--success-hover);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-warning: var(--warning);
+  --color-warning-hover: var(--warning-hover);
+}
+
+/* ---- Dark (default) ---- */
+:root,
+[data-theme='dark'] {
+  --canvas: #0b0f1a;
+  --surface: #1b2333;
+  --raised: #2a3447;
+  --raised-hover: #3a4761;
+  --fg: #f5f7fa;
+  --muted: #aab4c4;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-fg: #ffffff;
+  --edge: #5b6678;
+  --success: #22c55e;
+  --success-hover: #4ade80;
+  --danger: #ef4444;
+  --danger-hover: #f87171;
+  --warning: #d97706;
+  --warning-hover: #f59e0b;
+
+  --map-land: #8b94a5;
+  --map-land-border: #cbd2de;
+  --map-backdrop: #2a3344;
+  --map-backdrop-border: #4a5568;
+  --map-sea: #0b0f1a;
+  --map-lake: #0b0f1a;
+  --map-hover: #dde2ea;
+  --map-hover-border: #ffffff;
+  --map-subdiv-border: #aab4c4;
+  --map-hit: #22c55e;
+  --map-miss: #ef4444;
+  --map-claimed: #4ade80;
+  --map-claimed-hover: #86efac;
+  --map-cursor: #3b82f6;
+}
+
+/* ---- Light ---- */
+[data-theme='light'] {
+  --canvas: #eef1f6;
+  --surface: #ffffff;
+  --raised: #e2e6ec;
+  --raised-hover: #d2d8e0;
+  --fg: #161a22;
+  --muted: #56606f;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-fg: #ffffff;
+  --edge: #b3bcc9;
+  --success: #16a34a;
+  --success-hover: #15803d;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --warning: #ca8a04;
+  --warning-hover: #a16207;
+
+  --map-land: #a9b4c2;
+  --map-land-border: #3c4453;
+  --map-backdrop: #cfd6df;
+  --map-backdrop-border: #8a93a2;
+  --map-sea: #eef1f6;
+  --map-lake: #eef1f6;
+  --map-hover: #97a2b2;
+  --map-hover-border: #161a22;
+  --map-subdiv-border: #7c8696;
+  --map-hit: #15a047;
+  --map-miss: #dc2626;
+  --map-claimed: #16a34a;
+  --map-claimed-hover: #15803d;
+  --map-cursor: #2563eb;
+}
+
+/* ---- Dark, high contrast ---- */
+[data-theme='dark-hc'] {
+  --canvas: #000000;
+  --surface: #000000;
+  --raised: #1a1a1a;
+  --raised-hover: #2e2e2e;
+  --fg: #ffffff;
+  --muted: #ededed;
+  --accent: #4cc2ff;
+  --accent-hover: #82d4ff;
+  --accent-fg: #000000;
+  --edge: #ffffff;
+  --success: #3bff86;
+  --success-hover: #74ffae;
+  --danger: #ff6b6b;
+  --danger-hover: #ff9a9a;
+  --warning: #ffd60a;
+  --warning-hover: #ffe45c;
+
+  --map-land: #ffffff;
+  --map-land-border: #000000;
+  --map-backdrop: #2e2e2e;
+  --map-backdrop-border: #ffffff;
+  --map-sea: #000000;
+  --map-lake: #000000;
+  --map-hover: #ffe45c;
+  --map-hover-border: #000000;
+  --map-subdiv-border: #4cc2ff;
+  --map-hit: #3bff86;
+  --map-miss: #ff6b6b;
+  --map-claimed: #3bff86;
+  --map-claimed-hover: #aaffce;
+  --map-cursor: #4cc2ff;
+}
+
+/* ---- Light, high contrast ---- */
+[data-theme='light-hc'] {
+  --canvas: #ffffff;
+  --surface: #ffffff;
+  --raised: #e6e6e6;
+  --raised-hover: #d0d0d0;
+  --fg: #000000;
+  --muted: #1a1a1a;
+  --accent: #0040c1;
+  --accent-hover: #0030a0;
+  --accent-fg: #ffffff;
+  --edge: #000000;
+  --success: #006d2c;
+  --success-hover: #00521f;
+  --danger: #c20000;
+  --danger-hover: #960000;
+  --warning: #8a5a00;
+  --warning-hover: #6b4500;
+
+  --map-land: #000000;
+  --map-land-border: #ffffff;
+  --map-backdrop: #d0d0d0;
+  --map-backdrop-border: #000000;
+  --map-sea: #ffffff;
+  --map-lake: #ffffff;
+  --map-hover: #0040c1;
+  --map-hover-border: #ffffff;
+  --map-subdiv-border: #c20000;
+  --map-hit: #00a23f;
+  --map-miss: #e60000;
+  --map-claimed: #00a23f;
+  --map-claimed-hover: #00701f;
+  --map-cursor: #0040c1;
+}
+
+/* GameMap SVG cursor — themed via CSS so it needs no JS */
+.map-cursor {
+  fill: var(--map-cursor);
+  fill-opacity: 0.3;
+  stroke: var(--map-cursor);
+  stroke-width: 2;
+}
