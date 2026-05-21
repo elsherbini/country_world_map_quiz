@@ -4,6 +4,7 @@
   import { countries, type CountryProperties } from '$lib/data/countries';
   import { subdivisions, isSubdivisionCode } from '$lib/data/subdivisions';
   import { lakes } from '$lib/data/lakes';
+  import { theme, getMapColors, DEFAULT_MAP_COLORS } from '$lib/theme.svelte';
   import type { Feature, Geometry } from 'geojson';
 
   let {
@@ -48,6 +49,16 @@
     rotate: [0, 0, 0],
     translate: [480, 250],
     useClipExtent: false
+  });
+
+  let colors = $state(DEFAULT_MAP_COLORS);
+
+  // Re-snapshot CSS map colors whenever the theme changes, then redraw.
+  $effect(() => {
+    void theme.mode;
+    void theme.highContrast;
+    colors = getMapColors();
+    drawMap();
   });
 
   function interiorPoint(feature: Feature<Geometry, Record<string, unknown>>): [number, number] {
@@ -217,18 +228,21 @@
 
     ctx.clearRect(0, 0, width, height);
 
+    ctx.fillStyle = colors.sea;
+    ctx.fillRect(0, 0, width, height);
+
     for (const feature of countries.features) {
       ctx.beginPath();
       pathGen(feature);
       const code = getCodeForFeature(feature);
       if (highlightCode === code) {
-        ctx.fillStyle = highlightHit ? '#22c55e' : '#ef4444';
+        ctx.fillStyle = highlightHit ? colors.hit : colors.miss;
       } else {
-        ctx.fillStyle = '#6b7280';
+        ctx.fillStyle = colors.land;
       }
       ctx.fill();
-      ctx.strokeStyle = '#374151';
-      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = colors.landBorder;
+      ctx.lineWidth = 0.75;
       ctx.stroke();
     }
 
@@ -240,10 +254,10 @@
         pathGen(feature);
         const code = feature.properties.iso_3166_2;
         if (highlightCode === code) {
-          ctx.fillStyle = highlightHit ? '#22c55e' : '#ef4444';
+          ctx.fillStyle = highlightHit ? colors.hit : colors.miss;
           ctx.fill();
         }
-        ctx.strokeStyle = '#6b7280';
+        ctx.strokeStyle = colors.subdivBorder;
         ctx.lineWidth = 0.3;
         ctx.stroke();
       }
@@ -253,18 +267,21 @@
     for (const feature of lakes.features) {
       ctx.beginPath();
       pathGen(feature);
-      ctx.fillStyle = '#111827';
+      ctx.fillStyle = colors.lake;
       ctx.fill();
     }
 
     if (clickGeo) {
       const px = proj(clickGeo.lonLat);
       if (px) {
+        const c = clickGeo.hit ? colors.hit : colors.miss;
         ctx.beginPath();
         ctx.arc(px[0], px[1], CIRCLE_RADIUS_PX, 0, 2 * Math.PI);
-        ctx.fillStyle = clickGeo.hit ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)';
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = c;
         ctx.fill();
-        ctx.strokeStyle = clickGeo.hit ? '#22c55e' : '#ef4444';
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = c;
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -275,9 +292,11 @@
       if (px) {
         ctx.beginPath();
         ctx.arc(px[0], px[1], CIRCLE_RADIUS_PX, 0, 2 * Math.PI);
-        ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = colors.hit;
         ctx.fill();
-        ctx.strokeStyle = '#22c55e';
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = colors.hit;
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -513,14 +532,7 @@
     class="absolute inset-0 pointer-events-none"
   >
     {#if mousePos}
-      <circle
-        cx={mousePos.x}
-        cy={mousePos.y}
-        r={CIRCLE_RADIUS_PX}
-        fill="rgba(59, 130, 246, 0.3)"
-        stroke="#3b82f6"
-        stroke-width="2"
-      />
+      <circle class="map-cursor" cx={mousePos.x} cy={mousePos.y} r={CIRCLE_RADIUS_PX} />
     {/if}
   </svg>
 </div>
