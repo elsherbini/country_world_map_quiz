@@ -3,6 +3,10 @@ import { browser } from '$app/environment';
 export type Mode = 'light' | 'dark';
 export type ThemeKey = 'dark' | 'light' | 'dark-hc' | 'light-hc';
 
+// NOTE: The mode-resolution and localStorage keys below are mirrored by the
+// inline anti-flash IIFE in src/app.html (which cannot import this module).
+// Keep the two in sync: 'theme-mode' / 'theme-contrast' keys and the
+// resolveTheme() formula must match app.html.
 function initialMode(): Mode {
   if (!browser) return 'dark';
   const stored = localStorage.getItem('theme-mode');

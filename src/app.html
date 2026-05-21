@@ -3,6 +3,9 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!-- Anti-flash: sets data-theme before paint. Mirrors logic in
+		     src/lib/theme.svelte.ts — keep localStorage keys and the
+		     resolveTheme formula in sync with that module. -->
 		<script>
 			(function () {
 				try {
