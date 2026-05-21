@@ -113,12 +113,12 @@
   }
 </script>
 
-<div class="flex flex-col h-screen bg-gray-900 text-white">
+<div class="flex flex-col h-screen bg-canvas text-fg">
   <!-- Header -->
-  <div class="flex items-center justify-between px-4 py-2 bg-gray-800">
+  <div class="flex items-center justify-between px-4 py-2 bg-surface">
     <h1 class="text-lg font-bold">
       {#if currentCode}
-        Click on: <span class="text-blue-400">{nameByCode[currentCode] ?? currentCode}</span>
+        Click on: <span class="text-accent">{nameByCode[currentCode] ?? currentCode}</span>
       {:else}
         No countries to review!
       {/if}
@@ -126,20 +126,20 @@
     <div class="flex gap-4">
       <button
         onclick={() => (showRegions = true)}
-        class="text-sm text-gray-400 hover:text-white"
+        class="text-sm text-muted hover:text-fg"
       >
         Regions
       </button>
-      <a href="{base}/map-attack" class="text-sm text-gray-400 hover:text-white">Map Attack</a>
-      <a href="{base}/cities" class="text-sm text-gray-400 hover:text-white">Cities</a>
-      <a href="{base}/manage" class="text-sm text-gray-400 hover:text-white">Manage Countries</a>
+      <a href="{base}/map-attack" class="text-sm text-muted hover:text-fg">Map Attack</a>
+      <a href="{base}/cities" class="text-sm text-muted hover:text-fg">Cities</a>
+      <a href="{base}/manage" class="text-sm text-muted hover:text-fg">Manage Countries</a>
     </div>
   </div>
 
   <!-- Map -->
   <div class="flex-1 relative overflow-hidden">
     {#if showRegions}
-      <div class="absolute inset-0 bg-gray-900 z-10 flex items-center justify-center p-6">
+      <div class="absolute inset-0 bg-canvas z-10 flex items-center justify-center p-6">
         <div class="max-w-md w-full">
           <h2 class="text-2xl font-bold mb-6 text-center">Select regions</h2>
           <div class="flex flex-wrap gap-2 justify-center mb-6">
@@ -148,8 +148,8 @@
                 onclick={() => handleToggleRegion(region)}
                 class="text-sm px-3 py-1.5 rounded-full transition-colors border-2
                   {gameData.regions[region]
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-transparent border-gray-600 text-gray-400'}"
+                    ? 'bg-accent border-accent text-fg'
+                    : 'bg-transparent border-edge text-muted'}"
               >
                 {REGION_LABELS[region]} ({regionCounts[region]})
               </button>
@@ -157,7 +157,7 @@
           </div>
           <button
             onclick={() => (showRegions = false)}
-            class="w-full py-3 rounded-lg font-semibold text-lg bg-blue-600 hover:bg-blue-500 text-white"
+            class="w-full py-3 rounded-lg font-semibold text-lg bg-accent hover:bg-accent-hover text-fg"
           >
             Done
           </button>
@@ -175,7 +175,7 @@
   </div>
 
   <!-- Stats bar -->
-  <div class="flex items-center justify-between px-4 py-2 bg-gray-800 text-sm text-gray-400">
+  <div class="flex items-center justify-between px-4 py-2 bg-surface text-sm text-muted">
     <span>Streak: {streak}</span>
     <span>Hits: {totalHits} | Misses: {totalMisses}</span>
     <span>
