@@ -4,6 +4,7 @@
   import { countries } from '$lib/data/countries';
   import { cities, cityKey } from '$lib/data/cities';
   import { lakes } from '$lib/data/lakes';
+  import { theme, getMapColors, DEFAULT_MAP_COLORS } from '$lib/theme.svelte';
 
   let {
     claimedCities = new Set<string>(),
@@ -26,8 +27,14 @@
   let currentTransform = $state(d3.zoomIdentity);
   let zoomBehavior: d3.ZoomBehavior<HTMLCanvasElement, unknown>;
 
-  const CLAIMED_COLOR = '#4ade80';
-  const CLAIMED_HOVER_COLOR = '#86efac';
+  let colors = $state(DEFAULT_MAP_COLORS);
+
+  $effect(() => {
+    void theme.mode;
+    void theme.highContrast;
+    colors = getMapColors();
+    drawMap();
+  });
 
   function buildProjection(): d3.GeoProjection {
     return d3.geoNaturalEarth1().fitExtent(
@@ -49,13 +56,12 @@
   }
 
   function getCityFill(key: string): string {
-    if (flashKey === key) return '#ef4444';
+    if (flashKey === key) return colors.miss;
     if (claimedCities.has(key)) {
-      if (hoveredKey === key) return CLAIMED_HOVER_COLOR;
-      return CLAIMED_COLOR;
+      return hoveredKey === key ? colors.claimedHover : colors.claimed;
     }
-    if (hoveredKey === key) return '#d1d5db';
-    return '#9ca3af';
+    if (hoveredKey === key) return colors.hover;
+    return colors.land;
   }
 
   function drawMap() {
@@ -67,14 +73,17 @@
 
     ctx.clearRect(0, 0, width, height);
 
+    ctx.fillStyle = colors.sea;
+    ctx.fillRect(0, 0, width, height);
+
     // Pass 1: Country borders (context only)
     for (const feature of countries.features) {
       ctx.beginPath();
       pathGen(feature);
-      ctx.fillStyle = '#1f2937';
+      ctx.fillStyle = colors.backdrop;
       ctx.fill();
-      ctx.strokeStyle = '#374151';
-      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = colors.backdropBorder;
+      ctx.lineWidth = 0.75;
       ctx.stroke();
     }
 
@@ -82,7 +91,7 @@
     for (const feature of lakes.features) {
       ctx.beginPath();
       pathGen(feature);
-      ctx.fillStyle = '#111827';
+      ctx.fillStyle = colors.lake;
       ctx.fill();
     }
 
@@ -101,7 +110,7 @@
       ctx.arc(px, py, radius, 0, Math.PI * 2);
       ctx.fillStyle = fill;
       ctx.fill();
-      ctx.strokeStyle = hoveredKey === key ? '#f3f4f6' : '#374151';
+      ctx.strokeStyle = hoveredKey === key ? colors.hoverBorder : colors.landBorder;
       ctx.lineWidth = hoveredKey === key ? 2 : 1;
       ctx.stroke();
     }
