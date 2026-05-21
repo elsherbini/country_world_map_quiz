@@ -14,11 +14,14 @@
     class="fixed bottom-3 right-3 z-50 flex gap-1 rounded-lg border border-edge
            bg-surface p-1 shadow-lg"
   >
+    <!-- No aria-pressed: light/dark is a two-way choice, not an on/off state;
+         the dynamic aria-label conveys the current mode. -->
     <button
       onclick={toggleMode}
       aria-label={theme.mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
       title={theme.mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      class="flex h-8 w-8 items-center justify-center rounded text-fg hover:bg-raised"
+      class="flex h-8 w-8 items-center justify-center rounded text-fg hover:bg-raised
+             focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       {#if theme.mode === 'dark'}
         <!-- moon -->
@@ -40,6 +43,7 @@
       aria-pressed={theme.highContrast}
       title={theme.highContrast ? 'Turn off high contrast' : 'Turn on high contrast'}
       class="flex h-8 w-8 items-center justify-center rounded
+             focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent
              {theme.highContrast ? 'bg-accent text-accent-fg' : 'text-fg hover:bg-raised'}"
     >
       <!-- contrast: circle, left half filled -->
