@@ -147,14 +147,14 @@
 </script>
 
 {#if phase === 'setup'}
-  <div class="min-h-screen bg-gray-900 text-white flex items-center justify-center p-6">
+  <div class="min-h-screen bg-canvas text-fg flex items-center justify-center p-6">
     <div class="max-w-md w-full">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Map Attack</h1>
-        <a href="{base}/" class="text-sm text-gray-400 hover:text-white">← Back to Learning Mode</a>
+        <a href="{base}/" class="text-sm text-muted hover:text-fg">← Back to Learning Mode</a>
       </div>
 
-      <p class="text-gray-400 mb-4">Select regions to include, then identify every country. You have 3 lives.</p>
+      <p class="text-muted mb-4">Select regions to include, then identify every country. You have 3 lives.</p>
 
       <div class="flex flex-wrap gap-2 mb-6">
         {#each ALL_REGIONS as region}
@@ -162,8 +162,8 @@
             onclick={() => toggleRegion(region)}
             class="text-sm px-3 py-1.5 rounded-full transition-colors border-2
               {selectedRegions[region]
-                ? 'bg-blue-600 border-blue-600 text-white'
-                : 'bg-transparent border-gray-600 text-gray-400'}"
+                ? 'bg-accent border-accent text-fg'
+                : 'bg-transparent border-edge text-muted'}"
           >
             {REGION_LABELS[region]} ({regionCounts[region]})
           </button>
@@ -174,8 +174,8 @@
         onclick={startGame}
         disabled={!anyRegionSelected}
         class="w-full py-3 rounded-lg font-semibold text-lg transition-colors {anyRegionSelected
-          ? 'bg-blue-600 hover:bg-blue-500 text-white'
-          : 'bg-gray-700 text-gray-500 cursor-not-allowed'}"
+          ? 'bg-accent hover:bg-accent-hover text-fg'
+          : 'bg-raised text-muted cursor-not-allowed'}"
       >
         Start
       </button>
@@ -183,16 +183,16 @@
   </div>
 
 {:else if phase === 'playing'}
-  <div class="flex flex-col h-screen bg-gray-900 text-white">
+  <div class="flex flex-col h-screen bg-canvas text-fg">
     <!-- HUD -->
     <div class="flex items-center justify-between px-4 py-2 bg-black/60 z-10">
       <div class="flex items-center gap-4">
-        <a href="{base}/" class="text-sm text-gray-400 hover:text-white whitespace-nowrap">← Back to Learning Mode</a>
+        <a href="{base}/" class="text-sm text-muted hover:text-fg whitespace-nowrap">← Back to Learning Mode</a>
         <div class="text-lg font-semibold">
-          Click on: <span class="text-blue-400">{currentTarget ? nameByCode[currentTarget] ?? currentTarget : ''}</span>
+          Click on: <span class="text-accent">{currentTarget ? nameByCode[currentTarget] ?? currentTarget : ''}</span>
         </div>
       </div>
-      <div class="text-sm text-gray-300">
+      <div class="text-sm text-fg">
         {claimedCount} / {totalCountries}
       </div>
       <div class="flex items-center gap-3">
@@ -205,7 +205,7 @@
           onclick={changeRegions}
           aria-label="Change regions"
           title="Change regions"
-          class="text-gray-400 hover:text-white text-xl leading-none p-1"
+          class="text-muted hover:text-fg text-xl leading-none p-1"
         >
           ↻
         </button>
@@ -226,7 +226,7 @@
 
 {:else}
   <!-- Results overlay on top of map -->
-  <div class="flex flex-col h-screen bg-gray-900 text-white">
+  <div class="flex flex-col h-screen bg-canvas text-fg">
     <div class="flex-1 relative overflow-hidden">
       <MapAttackMap
         targetCode=""
@@ -235,31 +235,31 @@
       />
       <!-- Overlay -->
       <div class="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-        <div class="bg-gray-800 rounded-xl p-8 max-w-sm w-full mx-4 text-center">
+        <div class="bg-surface rounded-xl p-8 max-w-sm w-full mx-4 text-center">
           {#if won}
             <h2 class="text-3xl font-bold mb-2">You Win!</h2>
-            <p class="text-gray-400 mb-6">All {totalCountries} countries identified</p>
+            <p class="text-muted mb-6">All {totalCountries} countries identified</p>
           {:else}
             <h2 class="text-3xl font-bold mb-2">Game Over</h2>
-            <p class="text-gray-400 mb-6">{claimedCount} / {totalCountries} countries identified</p>
+            <p class="text-muted mb-6">{claimedCount} / {totalCountries} countries identified</p>
           {/if}
 
           <div class="flex flex-col gap-3">
             <button
               onclick={playAgain}
-              class="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-500 font-semibold"
+              class="w-full py-2 rounded-lg bg-accent hover:bg-accent-hover font-semibold"
             >
               Play Again
             </button>
             <button
               onclick={changeRegions}
-              class="w-full py-2 rounded-lg bg-gray-700 hover:bg-gray-600"
+              class="w-full py-2 rounded-lg bg-raised hover:bg-raised-hover"
             >
               Change Regions
             </button>
             <a
               href="{base}/"
-              class="w-full py-2 rounded-lg bg-gray-700 hover:bg-gray-600 block text-center"
+              class="w-full py-2 rounded-lg bg-raised hover:bg-raised-hover block text-center"
             >
               ← Back to Learning Mode
             </a>
