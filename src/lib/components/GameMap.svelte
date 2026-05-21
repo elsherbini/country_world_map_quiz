@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import * as d3 from 'd3';
   import { countries, type CountryProperties } from '$lib/data/countries';
   import { subdivisions, isSubdivisionCode } from '$lib/data/subdivisions';
@@ -53,12 +53,14 @@
 
   let colors = $state(DEFAULT_MAP_COLORS);
 
-  // Re-snapshot CSS map colors whenever the theme changes, then redraw.
+  // Re-snapshot CSS map colors when the theme changes, then redraw.
+  // Only theme.mode / theme.highContrast are tracked; drawMap() is untracked
+  // so the reactive state it reads (width, hover, etc.) can't trigger this.
   $effect(() => {
     void theme.mode;
     void theme.highContrast;
     colors = getMapColors();
-    drawMap();
+    untrack(() => drawMap());
   });
 
   function interiorPoint(feature: Feature<Geometry, Record<string, unknown>>): [number, number] {
