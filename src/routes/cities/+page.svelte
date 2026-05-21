@@ -212,7 +212,7 @@
         <h2 class="text-2xl font-bold">City Population Data</h2>
         <button
           onclick={() => (showAbout = false)}
-          class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover font-semibold"
+          class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg font-semibold"
         >
           Done
         </button>
@@ -293,7 +293,7 @@
             onclick={() => toggleContinent(continent)}
             class="text-sm px-3 py-1.5 rounded-full transition-colors border-2
               {settings.continents[continent]
-                ? 'bg-accent border-accent text-fg'
+                ? 'bg-accent border-accent text-accent-fg'
                 : 'bg-transparent border-edge text-muted'}"
           >
             {continent} ({continentCounts[continent]})
@@ -309,7 +309,7 @@
             onclick={() => toggleTier(tier)}
             class="text-sm px-3 py-1.5 rounded-full transition-colors border-2
               {settings.tiers[tier]
-                ? 'bg-accent border-accent text-fg'
+                ? 'bg-accent border-accent text-accent-fg'
                 : 'bg-transparent border-edge text-muted'}"
           >
             {POPULATION_TIER_LABELS[tier]} ({tierCounts[tier]})
@@ -334,7 +334,7 @@
         onclick={startGame}
         disabled={!anySelected}
         class="w-full py-3 rounded-lg font-semibold text-lg transition-colors {anySelected
-          ? 'bg-accent hover:bg-accent-hover text-fg'
+          ? 'bg-accent hover:bg-accent-hover text-accent-fg'
           : 'bg-raised text-muted cursor-not-allowed'}"
       >
         Start
@@ -345,7 +345,7 @@
 {:else if phase === 'playing'}
   <div class="flex flex-col h-screen bg-canvas text-fg">
     <!-- HUD -->
-    <div class="flex items-center justify-between px-4 py-2 bg-black/60 z-10">
+    <div class="flex items-center justify-between px-4 py-2 bg-surface/90 z-10">
       <div class="text-lg font-semibold">
         Click on: <span class="text-accent">{getTargetDisplay()}</span>
       </div>
@@ -402,7 +402,7 @@
           <div class="flex flex-col gap-3">
             <button
               onclick={playAgain}
-              class="w-full py-2 rounded-lg bg-accent hover:bg-accent-hover font-semibold"
+              class="w-full py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg font-semibold"
             >
               Play Again
             </button>

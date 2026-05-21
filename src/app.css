@@ -12,6 +12,7 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  /* accent-fg is the on-color for ANY saturated fill (accent/success/warning/danger) */
   --color-accent-fg: var(--accent-fg);
   --color-edge: var(--edge);
   --color-success: var(--success);

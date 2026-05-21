@@ -83,7 +83,7 @@
       <div class="flex gap-4 items-center">
         <button
           onclick={handleResetAll}
-          class="text-sm px-3 py-1 bg-danger rounded hover:bg-danger-hover"
+          class="text-sm px-3 py-1 bg-danger text-accent-fg rounded hover:bg-danger-hover"
         >
           Reset All
         </button>
@@ -97,7 +97,7 @@
         <button
           onclick={() => handleToggleRegion(region)}
           class="text-sm px-3 py-1 rounded-full transition-colors {gameData.regions[region]
-            ? 'bg-accent text-fg hover:bg-accent-hover'
+            ? 'bg-accent text-accent-fg hover:bg-accent-hover'
             : 'bg-raised text-muted hover:bg-raised-hover'}"
         >
           {REGION_LABELS[region]} ({regionCounts[region]})
@@ -129,7 +129,7 @@
                 <div class="flex gap-2">
                   <button
                     onclick={() => handleToggleSkip(item.code)}
-                    class="text-xs px-2 py-1 rounded {status === 'skipped' ? 'bg-success hover:bg-success-hover' : 'bg-warning hover:bg-warning-hover'}"
+                    class="text-xs px-2 py-1 rounded text-accent-fg {status === 'skipped' ? 'bg-success hover:bg-success-hover' : 'bg-warning hover:bg-warning-hover'}"
                   >
                     {status === 'skipped' ? 'Unskip' : 'Skip'}
                   </button>

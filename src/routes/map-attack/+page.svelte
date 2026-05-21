@@ -162,7 +162,7 @@
             onclick={() => toggleRegion(region)}
             class="text-sm px-3 py-1.5 rounded-full transition-colors border-2
               {selectedRegions[region]
-                ? 'bg-accent border-accent text-fg'
+                ? 'bg-accent border-accent text-accent-fg'
                 : 'bg-transparent border-edge text-muted'}"
           >
             {REGION_LABELS[region]} ({regionCounts[region]})
@@ -174,7 +174,7 @@
         onclick={startGame}
         disabled={!anyRegionSelected}
         class="w-full py-3 rounded-lg font-semibold text-lg transition-colors {anyRegionSelected
-          ? 'bg-accent hover:bg-accent-hover text-fg'
+          ? 'bg-accent hover:bg-accent-hover text-accent-fg'
           : 'bg-raised text-muted cursor-not-allowed'}"
       >
         Start
@@ -185,7 +185,7 @@
 {:else if phase === 'playing'}
   <div class="flex flex-col h-screen bg-canvas text-fg">
     <!-- HUD -->
-    <div class="flex items-center justify-between px-4 py-2 bg-black/60 z-10">
+    <div class="flex items-center justify-between px-4 py-2 bg-surface/90 z-10">
       <div class="flex items-center gap-4">
         <a href="{base}/" class="text-sm text-muted hover:text-fg whitespace-nowrap">← Back to Learning Mode</a>
         <div class="text-lg font-semibold">
@@ -247,7 +247,7 @@
           <div class="flex flex-col gap-3">
             <button
               onclick={playAgain}
-              class="w-full py-2 rounded-lg bg-accent hover:bg-accent-hover font-semibold"
+              class="w-full py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg font-semibold"
             >
               Play Again
             </button>

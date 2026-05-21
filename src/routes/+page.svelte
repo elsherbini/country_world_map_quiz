@@ -148,7 +148,7 @@
                 onclick={() => handleToggleRegion(region)}
                 class="text-sm px-3 py-1.5 rounded-full transition-colors border-2
                   {gameData.regions[region]
-                    ? 'bg-accent border-accent text-fg'
+                    ? 'bg-accent border-accent text-accent-fg'
                     : 'bg-transparent border-edge text-muted'}"
               >
                 {REGION_LABELS[region]} ({regionCounts[region]})
@@ -157,7 +157,7 @@
           </div>
           <button
             onclick={() => (showRegions = false)}
-            class="w-full py-3 rounded-lg font-semibold text-lg bg-accent hover:bg-accent-hover text-fg"
+            class="w-full py-3 rounded-lg font-semibold text-lg bg-accent hover:bg-accent-hover text-accent-fg"
           >
             Done
           </button>
