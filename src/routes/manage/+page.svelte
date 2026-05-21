@@ -76,19 +76,19 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-900 text-white p-6">
+<div class="min-h-screen bg-canvas text-fg p-6">
   <div class="max-w-2xl mx-auto">
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-bold">Manage Countries</h1>
       <div class="flex gap-4 items-center">
         <button
           onclick={handleResetAll}
-          class="text-sm px-3 py-1 bg-red-700 rounded hover:bg-red-600"
+          class="text-sm px-3 py-1 bg-danger rounded hover:bg-danger-hover"
         >
           Reset All
         </button>
-        <a href="{base}/map-attack" class="text-sm text-blue-400 hover:text-blue-300">Map Attack</a>
-        <a href="{base}/" class="text-sm text-blue-400 hover:text-blue-300">← Back to Learning Mode</a>
+        <a href="{base}/map-attack" class="text-sm text-accent hover:text-accent-hover">Map Attack</a>
+        <a href="{base}/" class="text-sm text-accent hover:text-accent-hover">← Back to Learning Mode</a>
       </div>
     </div>
 
@@ -97,8 +97,8 @@
         <button
           onclick={() => handleToggleRegion(region)}
           class="text-sm px-3 py-1 rounded-full transition-colors {gameData.regions[region]
-            ? 'bg-blue-600 text-white hover:bg-blue-500'
-            : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}"
+            ? 'bg-accent text-fg hover:bg-accent-hover'
+            : 'bg-raised text-muted hover:bg-raised-hover'}"
         >
           {REGION_LABELS[region]} ({regionCounts[region]})
         </button>
@@ -109,34 +109,34 @@
       {@const items = grouped[status]}
       {#if items.length > 0}
         <div class="mb-8">
-          <h2 class="text-lg font-semibold mb-2 capitalize text-gray-300">
+          <h2 class="text-lg font-semibold mb-2 capitalize text-fg">
             {status} ({items.length})
           </h2>
           <div class="space-y-1">
             {#each items as item}
               <div
-                class="flex items-center justify-between px-3 py-2 bg-gray-800 rounded {gameData.regions[item.region]
+                class="flex items-center justify-between px-3 py-2 bg-surface rounded {gameData.regions[item.region]
                   ? ''
                   : 'opacity-40'}"
               >
                 <div>
                   <span>{item.name}</span>
                   {#if item.bucket !== null}
-                    <span class="text-xs text-gray-500 ml-2">Bucket {item.bucket}</span>
+                    <span class="text-xs text-muted ml-2">Bucket {item.bucket}</span>
                   {/if}
-                  <span class="text-xs text-gray-600 ml-2">{REGION_LABELS[item.region]}</span>
+                  <span class="text-xs text-muted ml-2">{REGION_LABELS[item.region]}</span>
                 </div>
                 <div class="flex gap-2">
                   <button
                     onclick={() => handleToggleSkip(item.code)}
-                    class="text-xs px-2 py-1 rounded {status === 'skipped' ? 'bg-green-700 hover:bg-green-600' : 'bg-yellow-700 hover:bg-yellow-600'}"
+                    class="text-xs px-2 py-1 rounded {status === 'skipped' ? 'bg-success hover:bg-success-hover' : 'bg-warning hover:bg-warning-hover'}"
                   >
                     {status === 'skipped' ? 'Unskip' : 'Skip'}
                   </button>
                   {#if status !== 'unseen'}
                     <button
                       onclick={() => handleReset(item.code)}
-                      class="text-xs px-2 py-1 bg-gray-600 rounded hover:bg-gray-500"
+                      class="text-xs px-2 py-1 bg-raised rounded hover:bg-raised-hover"
                     >
                       Reset
                     </button>
