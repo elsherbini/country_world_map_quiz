@@ -7,6 +7,7 @@
   } from '$lib/data/countries';
   import { subdivisions, isSubdivisionCode } from '$lib/data/subdivisions';
   import { lakes } from '$lib/data/lakes';
+  import { theme, getMapColors, DEFAULT_MAP_COLORS } from '$lib/theme.svelte';
   import type { Feature, Geometry } from 'geojson';
 
   let {
@@ -75,17 +76,22 @@
       ]);
   }
 
-  const CLAIMED_COLOR = '#4ade80';
-  const CLAIMED_HOVER_COLOR = '#86efac';
+  let colors = $state(DEFAULT_MAP_COLORS);
+
+  $effect(() => {
+    void theme.mode;
+    void theme.highContrast;
+    colors = getMapColors();
+    drawMap();
+  });
 
   function getFillColor(code: string): string {
-    if (flashCode === code) return '#ef4444';
+    if (flashCode === code) return colors.miss;
     if (claimedCountries.has(code)) {
-      if (hoveredCode === code) return CLAIMED_HOVER_COLOR;
-      return CLAIMED_COLOR;
+      return hoveredCode === code ? colors.claimedHover : colors.claimed;
     }
-    if (hoveredCode === code) return '#d1d5db';
-    return '#9ca3af';
+    if (hoveredCode === code) return colors.hover;
+    return colors.land;
   }
 
   function getStrokeWidth(code: string): number {
@@ -94,8 +100,8 @@
   }
 
   function getStrokeColor(code: string): string {
-    if (hoveredCode === code) return claimedCountries.has(code) ? '#e5e7eb' : '#f3f4f6';
-    return '#374151';
+    if (hoveredCode === code) return colors.hoverBorder;
+    return colors.landBorder;
   }
 
   function drawMap() {
@@ -106,6 +112,9 @@
     const pathGen = d3.geoPath().projection(proj).context(ctx);
 
     ctx.clearRect(0, 0, width, height);
+
+    ctx.fillStyle = colors.sea;
+    ctx.fillRect(0, 0, width, height);
 
     // Pass 1: Draw country polygons
     for (const feature of countries.features) {
@@ -134,7 +143,7 @@
         }
 
         // Always draw subdivision borders (subtle)
-        ctx.strokeStyle = '#6b7280';
+        ctx.strokeStyle = colors.subdivBorder;
         ctx.lineWidth = 0.3;
         ctx.stroke();
       }
@@ -144,7 +153,7 @@
     for (const feature of lakes.features) {
       ctx.beginPath();
       pathGen(feature);
-      ctx.fillStyle = '#111827';
+      ctx.fillStyle = colors.lake;
       ctx.fill();
     }
   }
