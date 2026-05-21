@@ -17,7 +17,6 @@
     <button
       onclick={toggleMode}
       aria-label={theme.mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      aria-pressed={theme.mode === 'light'}
       title={theme.mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
       class="flex h-8 w-8 items-center justify-center rounded text-fg hover:bg-raised"
     >
