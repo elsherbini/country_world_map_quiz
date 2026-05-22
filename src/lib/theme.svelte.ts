@@ -59,7 +59,6 @@ export interface MapColors {
   land: string;
   landBorder: string;
   backdrop: string;
-  backdropBorder: string;
   sea: string;
   lake: string;
   hover: string;
@@ -77,7 +76,6 @@ export const DEFAULT_MAP_COLORS: MapColors = {
   land: '#8b94a5',
   landBorder: '#cbd2de',
   backdrop: '#2a3344',
-  backdropBorder: '#4a5568',
   sea: '#0b0f1a',
   lake: '#0b0f1a',
   hover: '#dde2ea',
@@ -100,7 +98,6 @@ export function getMapColors(): MapColors {
     land: v('--map-land'),
     landBorder: v('--map-land-border'),
     backdrop: v('--map-backdrop'),
-    backdropBorder: v('--map-backdrop-border'),
     sea: v('--map-sea'),
     lake: v('--map-lake'),
     hover: v('--map-hover'),

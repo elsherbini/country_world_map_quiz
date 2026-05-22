@@ -64,7 +64,7 @@
       return hoveredKey === key ? colors.claimedHover : colors.claimed;
     }
     if (hoveredKey === key) return colors.hover;
-    return colors.land;
+    return colors.backdrop;
   }
 
   function drawMap() {
@@ -83,9 +83,9 @@
     for (const feature of countries.features) {
       ctx.beginPath();
       pathGen(feature);
-      ctx.fillStyle = colors.backdrop;
+      ctx.fillStyle = colors.land;
       ctx.fill();
-      ctx.strokeStyle = colors.backdropBorder;
+      ctx.strokeStyle = colors.landBorder;
       ctx.lineWidth = 0.75;
       ctx.stroke();
     }
