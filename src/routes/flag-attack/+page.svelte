@@ -17,7 +17,6 @@
   const countryList = getCountryList();
   const subdivisionList = getSubdivisionList();
   const allTargets = [...countryList, ...subdivisionList];
-  const nameByCode = Object.fromEntries(allTargets.map((c) => [c.code, c.name]));
 
   // --- State ---
   type Phase = 'setup' | 'playing' | 'results';
