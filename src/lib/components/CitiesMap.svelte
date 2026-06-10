@@ -108,7 +108,7 @@
       const [px, py] = projected;
 
       const fill = getCityFill(key);
-      const radius = 8;
+      const radius = 5;
       ctx.beginPath();
       ctx.arc(px, py, radius, 0, Math.PI * 2);
       ctx.fillStyle = fill;
@@ -132,7 +132,7 @@
       const dx = projected[0] - x;
       const dy = projected[1] - y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 20 && dist < closestDist) {
+      if (dist < 14 && dist < closestDist) {
         closestDist = dist;
         closest = key;
       }

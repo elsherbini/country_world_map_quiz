@@ -269,8 +269,9 @@
           which makes Tokyo's, Karachi's and Lagos's metros directly comparable.
         </p>
         <p>
-          Coordinates are population-weighted centroids of each urban center. Cities are included if their 2025
-          population is at least 2 million.
+          Coordinates are population-weighted centroids of each urban center. The dataset includes cities down to
+          500,000 people; in the game, each selected country always contributes its largest city, additional cities
+          appear when they exceed your population cutoff, and national capitals can be included regardless of size.
         </p>
         <p class="text-sm text-muted">
           Side effect of the methodology: US, Canadian and Australian metros come out smaller than the MSA figures
