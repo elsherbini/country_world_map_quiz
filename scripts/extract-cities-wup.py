@@ -162,7 +162,9 @@ def main() -> None:
         if pop >= POP_THRESHOLD or is_capital or id(entry) in top_ids:
             selected.append(entry)
 
-    # Dedupe by (code, english_name).
+    # Dedupe by (code, english_name), keeping the most-populous of any
+    # same-named cities in the same country (sort desc so first-seen == largest).
+    selected.sort(key=lambda e: -e[2])
     cities = []
     seen = set()
     for row, iso3, pop, is_capital in selected:
