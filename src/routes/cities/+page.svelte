@@ -40,6 +40,7 @@
     countries: string[]; // ISO codes (additive to regions)
     populationMode: boolean;
     capitals: boolean;
+    alwaysTop: number;
     topN: number;
     cutoff: number;
     showCountry: boolean;
@@ -51,6 +52,7 @@
       countries: [],
       populationMode: true,
       capitals: false,
+      alwaysTop: 1,
       topN: 5,
       cutoff: 1_000_000,
       showCountry: true
@@ -69,6 +71,7 @@
         countries: Array.isArray(p.countries) ? p.countries : d.countries,
         populationMode: p.populationMode ?? d.populationMode,
         capitals: p.capitals ?? d.capitals,
+        alwaysTop: p.alwaysTop ?? d.alwaysTop,
         topN: p.topN ?? d.topN,
         cutoff: p.cutoff ?? d.cutoff,
         showCountry: p.showCountry ?? d.showCountry
@@ -111,6 +114,11 @@
     saveSettings();
   }
 
+  function setAlwaysTop(n: number) {
+    settings.alwaysTop = Math.max(0, Math.min(25, Math.floor(n) || 0));
+    saveSettings();
+  }
+
   function setTopN(n: number) {
     settings.topN = Math.max(1, Math.min(25, Math.floor(n) || 1));
     saveSettings();
@@ -137,7 +145,8 @@
       list.forEach((city, idx) => {
         const include =
           (settings.populationMode &&
-            (idx === 0 || (idx < settings.topN && city.population > settings.cutoff))) ||
+            (idx < settings.alwaysTop ||
+              (idx < settings.topN && city.population > settings.cutoff))) ||
           (settings.capitals && city.isCapital);
         if (include) out.push(city);
       });
@@ -395,19 +404,30 @@
         >Capitals: {settings.capitals ? 'On' : 'Off'}</button>
 
         <div class="flex items-center gap-3 text-sm {settings.populationMode ? '' : 'opacity-40'}">
-          <label class="text-muted" for="topN">Top cities per country</label>
-          <input id="topN" type="number" min="1" max="25" value={settings.topN}
+          <label class="text-muted" for="alwaysTop">Always show top</label>
+          <input id="alwaysTop" type="number" min="0" max="25" value={settings.alwaysTop}
             disabled={!settings.populationMode}
-            oninput={(e) => setTopN(+e.currentTarget.value)}
-            class="w-20 px-2 py-1 rounded bg-raised border border-edge text-fg {settings.populationMode ? '' : 'opacity-40 cursor-not-allowed'}" />
+            oninput={(e) => setAlwaysTop(+e.currentTarget.value)}
+            class="w-20 px-2 py-1 rounded bg-raised border border-edge text-fg {settings.populationMode ? '' : 'cursor-not-allowed'}" />
+          <span class="text-muted">cities per country</span>
         </div>
 
         <div class="flex items-center gap-3 text-sm {settings.populationMode ? '' : 'opacity-40'}">
-          <label class="text-muted" for="cutoff">Population cutoff for #2+</label>
+          <label class="text-muted" for="topN">…then up to</label>
+          <input id="topN" type="number" min="1" max="25" value={settings.topN}
+            disabled={!settings.populationMode}
+            oninput={(e) => setTopN(+e.currentTarget.value)}
+            class="w-20 px-2 py-1 rounded bg-raised border border-edge text-fg {settings.populationMode ? '' : 'cursor-not-allowed'}" />
+          <span class="text-muted">total if above</span>
           <input id="cutoff" type="number" min="500000" step="100000" value={settings.cutoff}
             disabled={!settings.populationMode}
             oninput={(e) => setCutoff(+e.currentTarget.value)}
-            class="w-32 px-2 py-1 rounded bg-raised border border-edge text-fg {settings.populationMode ? '' : 'opacity-40 cursor-not-allowed'}" />
+            class="w-32 px-2 py-1 rounded bg-raised border border-edge text-fg {settings.populationMode ? '' : 'cursor-not-allowed'}" />
+          <span
+            class="text-muted cursor-help select-none border border-edge rounded-full w-5 h-5 inline-flex items-center justify-center text-xs"
+            title="Each country always shows its top “always show” cities (by population), no matter how small. Beyond those, additional cities appear only if their population is above this cutoff, up to the total cap. Set “always show top” to 0 to require every city to beat the cutoff."
+            aria-label="Help: population cutoff"
+          >?</span>
         </div>
 
         <button
