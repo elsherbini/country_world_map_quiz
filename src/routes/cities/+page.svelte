@@ -38,6 +38,7 @@
   interface CitySettings {
     regions: Record<Region, boolean>;
     countries: string[]; // ISO codes (additive to regions)
+    populationMode: boolean;
     capitals: boolean;
     topN: number;
     cutoff: number;
@@ -48,6 +49,7 @@
     return {
       regions: Object.fromEntries(CITY_REGIONS.map((r) => [r, true])) as Record<Region, boolean>,
       countries: [],
+      populationMode: true,
       capitals: false,
       topN: 5,
       cutoff: 1_000_000,
@@ -65,6 +67,7 @@
       return {
         regions: { ...d.regions, ...p.regions },
         countries: Array.isArray(p.countries) ? p.countries : d.countries,
+        populationMode: p.populationMode ?? d.populationMode,
         capitals: p.capitals ?? d.capitals,
         topN: p.topN ?? d.topN,
         cutoff: p.cutoff ?? d.cutoff,
@@ -90,6 +93,11 @@
     const i = settings.countries.indexOf(code);
     if (i >= 0) settings.countries.splice(i, 1);
     else settings.countries.push(code);
+    saveSettings();
+  }
+
+  function togglePopulationMode() {
+    settings.populationMode = !settings.populationMode;
     saveSettings();
   }
 
@@ -128,8 +136,8 @@
       const list = citiesByCode.get(code) ?? [];
       list.forEach((city, idx) => {
         const include =
-          idx === 0 ||
-          (idx < settings.topN && city.population > settings.cutoff) ||
+          (settings.populationMode &&
+            (idx === 0 || (idx < settings.topN && city.population > settings.cutoff))) ||
           (settings.capitals && city.isCapital);
         if (include) out.push(city);
       });
@@ -377,22 +385,29 @@
       <!-- Capitals + top-N + cutoff + country label -->
       <div class="space-y-3 mb-4">
         <button
+          onclick={togglePopulationMode}
+          class="text-sm px-3 py-1.5 rounded-lg transition-colors {settings.populationMode ? 'bg-accent text-accent-fg' : 'bg-raised hover:bg-raised-hover'}"
+        >Population cities: {settings.populationMode ? 'On' : 'Off'}</button>
+
+        <button
           onclick={toggleCapitals}
           class="text-sm px-3 py-1.5 rounded-lg transition-colors {settings.capitals ? 'bg-accent text-accent-fg' : 'bg-raised hover:bg-raised-hover'}"
         >Capitals: {settings.capitals ? 'On' : 'Off'}</button>
 
-        <div class="flex items-center gap-3 text-sm">
+        <div class="flex items-center gap-3 text-sm {settings.populationMode ? '' : 'opacity-40'}">
           <label class="text-muted" for="topN">Top cities per country</label>
           <input id="topN" type="number" min="1" max="25" value={settings.topN}
+            disabled={!settings.populationMode}
             oninput={(e) => setTopN(+e.currentTarget.value)}
-            class="w-20 px-2 py-1 rounded bg-raised border border-edge text-fg" />
+            class="w-20 px-2 py-1 rounded bg-raised border border-edge text-fg {settings.populationMode ? '' : 'opacity-40 cursor-not-allowed'}" />
         </div>
 
-        <div class="flex items-center gap-3 text-sm">
+        <div class="flex items-center gap-3 text-sm {settings.populationMode ? '' : 'opacity-40'}">
           <label class="text-muted" for="cutoff">Population cutoff for #2+</label>
           <input id="cutoff" type="number" min="500000" step="100000" value={settings.cutoff}
+            disabled={!settings.populationMode}
             oninput={(e) => setCutoff(+e.currentTarget.value)}
-            class="w-32 px-2 py-1 rounded bg-raised border border-edge text-fg" />
+            class="w-32 px-2 py-1 rounded bg-raised border border-edge text-fg {settings.populationMode ? '' : 'opacity-40 cursor-not-allowed'}" />
         </div>
 
         <button
