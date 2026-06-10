@@ -70,6 +70,7 @@
   let lives = $state(MAX_LIVES);
   let claimedCountries = $state(new Set<string>());
   let currentTarget = $state<string | null>(null);
+  let currentFlagUrl = $derived(currentTarget ? getFlagUrl(currentTarget) : null);
   let won = $state(false);
 
   let eligibleCountries = $state<string[]>([]);
@@ -190,9 +191,7 @@
     <div class="flex items-center justify-between px-4 py-2 bg-surface/90 z-10">
       <div class="flex items-center gap-4">
         <a href="{base}/" class="text-sm text-muted hover:text-fg whitespace-nowrap">← Back to Learning Mode</a>
-        <div class="text-lg font-semibold">
-          Click on: <span class="text-accent">{currentTarget ? nameByCode[currentTarget] ?? currentTarget : ''}</span>
-        </div>
+        <div class="text-lg font-semibold text-muted">Find this flag</div>
       </div>
       <div class="text-sm text-fg">
         {claimedCount} / {totalCountries}
@@ -223,6 +222,18 @@
         {activeSubnationalIsoA2s}
         onCountryClick={handleCountryClick}
       />
+      {#if currentFlagUrl}
+        <div
+          class="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-surface/95 rounded-xl shadow-lg border border-edge p-3 pointer-events-none"
+        >
+          <img
+            src={currentFlagUrl}
+            alt="Flag to identify"
+            class="h-[100px] w-auto block rounded-sm"
+            loading="eager"
+          />
+        </div>
+      {/if}
     </div>
   </div>
 
