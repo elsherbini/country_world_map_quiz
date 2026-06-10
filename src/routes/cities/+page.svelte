@@ -3,32 +3,56 @@
   import CitiesMap from '$lib/components/CitiesMap.svelte';
   import {
     getCityList,
+    getCityCountries,
     findDuplicateNames,
-    CITY_CONTINENTS,
-    POPULATION_TIERS,
-    POPULATION_TIER_LABELS,
-    type CityContinent,
-    type PopulationTier
+    CITY_REGIONS,
+    REGION_LABELS,
+    type CityEntry
   } from '$lib/data/cities';
+  import { type Region } from '$lib/data/countries';
 
-  const STORAGE_KEY = 'cities-game-settings';
+  const STORAGE_KEY = 'cities-game-settings-v2';
   const MAX_LIVES = 3;
 
   const allCities = getCityList();
   const nameByKey = Object.fromEntries(allCities.map((c) => [c.key, c]));
+  const allCountries = getCityCountries();
+  const countryNameByCode = Object.fromEntries(allCountries.map((c) => [c.code, c.name]));
+  const sortedCities = [...allCities].sort((a, b) => b.population - a.population);
+
+  // cities grouped by country code, sorted by population desc (built once)
+  const citiesByCode = new Map<string, CityEntry[]>();
+  for (const c of allCities) {
+    const arr = citiesByCode.get(c.code) ?? [];
+    arr.push(c);
+    citiesByCode.set(c.code, arr);
+  }
+  for (const arr of citiesByCode.values()) arr.sort((a, b) => b.population - a.population);
 
   // --- State ---
   type Phase = 'setup' | 'playing' | 'results';
   let phase = $state<Phase>('setup');
   let showAbout = $state(false);
 
-  const sortedCities = [...allCities].sort((a, b) => b.population - a.population);
-
   // Settings (persisted)
   interface CitySettings {
-    continents: Record<CityContinent, boolean>;
-    tiers: Record<PopulationTier, boolean>;
+    regions: Record<Region, boolean>;
+    countries: string[]; // ISO codes (additive to regions)
+    capitals: boolean;
+    topN: number;
+    cutoff: number;
     showCountry: boolean;
+  }
+
+  function defaultSettings(): CitySettings {
+    return {
+      regions: Object.fromEntries(CITY_REGIONS.map((r) => [r, true])) as Record<Region, boolean>,
+      countries: [],
+      capitals: false,
+      topN: 5,
+      cutoff: 1_000_000,
+      showCountry: true
+    };
   }
 
   function loadSettings(): CitySettings {
@@ -36,24 +60,19 @@
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultSettings();
     try {
-      const parsed = JSON.parse(raw);
-      const defs = defaultSettings();
+      const p = JSON.parse(raw);
+      const d = defaultSettings();
       return {
-        continents: { ...defs.continents, ...parsed.continents },
-        tiers: { ...defs.tiers, ...parsed.tiers },
-        showCountry: parsed.showCountry ?? defs.showCountry
+        regions: { ...d.regions, ...p.regions },
+        countries: Array.isArray(p.countries) ? p.countries : d.countries,
+        capitals: p.capitals ?? d.capitals,
+        topN: p.topN ?? d.topN,
+        cutoff: p.cutoff ?? d.cutoff,
+        showCountry: p.showCountry ?? d.showCountry
       };
     } catch {
       return defaultSettings();
     }
-  }
-
-  function defaultSettings(): CitySettings {
-    return {
-      continents: Object.fromEntries(CITY_CONTINENTS.map((c) => [c, true])) as Record<CityContinent, boolean>,
-      tiers: Object.fromEntries(POPULATION_TIERS.map((t) => [t, true])) as Record<PopulationTier, boolean>,
-      showCountry: true
-    };
   }
 
   let settings = $state<CitySettings>(loadSettings());
@@ -62,13 +81,20 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }
 
-  function toggleContinent(c: CityContinent) {
-    settings.continents[c] = !settings.continents[c];
+  function toggleRegion(r: Region) {
+    settings.regions[r] = !settings.regions[r];
     saveSettings();
   }
 
-  function toggleTier(t: PopulationTier) {
-    settings.tiers[t] = !settings.tiers[t];
+  function toggleCountry(code: string) {
+    const i = settings.countries.indexOf(code);
+    if (i >= 0) settings.countries.splice(i, 1);
+    else settings.countries.push(code);
+    saveSettings();
+  }
+
+  function toggleCapitals() {
+    settings.capitals = !settings.capitals;
     saveSettings();
   }
 
@@ -77,38 +103,54 @@
     saveSettings();
   }
 
-  // --- Filtered city counts ---
-  let eligibleCities = $derived(
-    allCities.filter(
-      (c) => settings.continents[c.continent] && settings.tiers[c.populationTier]
-    )
-  );
+  function setTopN(n: number) {
+    settings.topN = Math.max(1, Math.min(25, Math.floor(n) || 1));
+    saveSettings();
+  }
 
-  // Cross-filtered counts: continent counts filtered by selected tiers
-  let continentCounts = $derived.by(() => {
-    const counts: Record<CityContinent, number> = {} as Record<CityContinent, number>;
-    for (const c of CITY_CONTINENTS) counts[c] = 0;
-    for (const city of allCities) {
-      if (settings.tiers[city.populationTier]) {
-        counts[city.continent] += 1;
-      }
+  function setCutoff(n: number) {
+    settings.cutoff = Math.max(500_000, Math.floor(n) || 500_000);
+    saveSettings();
+  }
+
+  // --- Eligible set logic ---
+  let inPlayCodes = $derived.by(() => {
+    const set = new Set<string>();
+    for (const c of allCountries) {
+      if (settings.regions[c.region] || settings.countries.includes(c.code)) set.add(c.code);
     }
-    return counts;
+    return set;
   });
 
-  // Cross-filtered counts: tier counts filtered by selected continents
-  let tierCounts = $derived.by(() => {
-    const counts: Record<PopulationTier, number> = {} as Record<PopulationTier, number>;
-    for (const t of POPULATION_TIERS) counts[t] = 0;
-    for (const city of allCities) {
-      if (settings.continents[city.continent]) {
-        counts[city.populationTier] += 1;
-      }
+  let eligibleCities = $derived.by(() => {
+    const out: CityEntry[] = [];
+    for (const code of inPlayCodes) {
+      const list = citiesByCode.get(code) ?? [];
+      list.forEach((city, idx) => {
+        const include =
+          idx === 0 ||
+          (idx < settings.topN && city.population > settings.cutoff) ||
+          (settings.capitals && city.isCapital);
+        if (include) out.push(city);
+      });
     }
+    return out;
+  });
+
+  let regionCounts = $derived.by(() => {
+    const counts = Object.fromEntries(CITY_REGIONS.map((r) => [r, 0])) as Record<Region, number>;
+    for (const c of eligibleCities) if (c.region in counts) counts[c.region] += 1;
     return counts;
   });
 
   let anySelected = $derived(eligibleCities.length > 0);
+
+  let countryQuery = $state('');
+  let filteredCountries = $derived(
+    countryQuery.trim()
+      ? allCountries.filter((c) => c.name.toLowerCase().includes(countryQuery.trim().toLowerCase()))
+      : allCountries
+  );
 
   // --- Game state ---
   let lives = $state(MAX_LIVES);
@@ -141,10 +183,7 @@
   }
 
   function startGame() {
-    const eligible = allCities.filter(
-      (c) => settings.continents[c.continent] && settings.tiers[c.populationTier]
-    );
-    gameCities = eligible.map((c) => c.key);
+    gameCities = eligibleCities.map((c) => c.key);
     eligibleCityKeys = new Set(gameCities);
     duplicateNames = findDuplicateNames(eligibleCityKeys, allCities);
     remainingCities = shuffle([...gameCities]);
@@ -283,52 +322,85 @@
         <a href="{base}/" class="text-sm text-muted hover:text-fg">← Back to Learning Mode</a>
       </div>
 
-      <p class="text-muted mb-4">Select continents and population ranges, then identify every city. You have 3 lives.</p>
+      <p class="text-muted mb-4">Pick regions and/or specific countries, then identify every city. You have 3 lives.</p>
 
-      <!-- Continent filter -->
-      <h2 class="text-sm font-semibold text-muted mb-2">Continents</h2>
+      <!-- Regions -->
+      <h2 class="text-sm font-semibold text-muted mb-2">Regions</h2>
       <div class="flex flex-wrap gap-2 mb-4">
-        {#each CITY_CONTINENTS as continent}
+        {#each CITY_REGIONS as region}
           <button
-            onclick={() => toggleContinent(continent)}
+            onclick={() => toggleRegion(region)}
             class="text-sm px-3 py-1.5 rounded-full transition-colors border-2
-              {settings.continents[continent]
-                ? 'bg-accent border-accent text-accent-fg'
-                : 'bg-transparent border-edge text-muted'}"
-          >
-            {continent} ({continentCounts[continent]})
-          </button>
+              {settings.regions[region] ? 'bg-accent border-accent text-accent-fg' : 'bg-transparent border-edge text-muted'}"
+          >{REGION_LABELS[region]} ({regionCounts[region]})</button>
         {/each}
       </div>
 
-      <!-- Population filter -->
-      <h2 class="text-sm font-semibold text-muted mb-2">Population</h2>
-      <div class="flex flex-wrap gap-2 mb-4">
-        {#each POPULATION_TIERS as tier}
-          <button
-            onclick={() => toggleTier(tier)}
-            class="text-sm px-3 py-1.5 rounded-full transition-colors border-2
-              {settings.tiers[tier]
-                ? 'bg-accent border-accent text-accent-fg'
-                : 'bg-transparent border-edge text-muted'}"
-          >
-            {POPULATION_TIER_LABELS[tier]} ({tierCounts[tier]})
-          </button>
-        {/each}
-      </div>
+      <!-- Country multiselect -->
+      <h2 class="text-sm font-semibold text-muted mb-2">Specific countries (optional)</h2>
+      {#if settings.countries.length}
+        <div class="flex flex-wrap gap-1.5 mb-2">
+          {#each settings.countries as code}
+            <span class="text-xs px-2 py-1 rounded-full bg-accent text-accent-fg flex items-center gap-1">
+              {countryNameByCode[code] ?? code}
+              <button onclick={() => toggleCountry(code)} aria-label="Remove {countryNameByCode[code] ?? code}" class="leading-none">×</button>
+            </span>
+          {/each}
+        </div>
+      {/if}
+      <input
+        type="text"
+        bind:value={countryQuery}
+        placeholder="Search countries…"
+        class="w-full px-3 py-2 rounded-lg bg-raised text-fg border border-edge mb-2 text-sm"
+      />
+      {#if countryQuery.trim()}
+        <div class="max-h-40 overflow-y-auto border border-edge rounded-lg mb-4">
+          {#each filteredCountries.slice(0, 60) as c}
+            <button
+              onclick={() => toggleCountry(c.code)}
+              class="w-full text-left px-3 py-1.5 text-sm hover:bg-raised-hover flex items-center justify-between
+                {settings.countries.includes(c.code) ? 'text-accent' : 'text-fg'}"
+            >
+              <span>{c.name}</span>
+              {#if settings.countries.includes(c.code)}<span>✓</span>{/if}
+            </button>
+          {:else}
+            <p class="px-3 py-2 text-sm text-muted">No matches</p>
+          {/each}
+        </div>
+      {:else}
+        <div class="mb-4"></div>
+      {/if}
 
-      <!-- Toggles -->
-      <div class="flex gap-4 mb-4">
+      <!-- Capitals + top-N + cutoff + country label -->
+      <div class="space-y-3 mb-4">
+        <button
+          onclick={toggleCapitals}
+          class="text-sm px-3 py-1.5 rounded-lg transition-colors {settings.capitals ? 'bg-accent text-accent-fg' : 'bg-raised hover:bg-raised-hover'}"
+        >Capitals: {settings.capitals ? 'On' : 'Off'}</button>
+
+        <div class="flex items-center gap-3 text-sm">
+          <label class="text-muted" for="topN">Top cities per country</label>
+          <input id="topN" type="number" min="1" max="25" value={settings.topN}
+            oninput={(e) => setTopN(+e.currentTarget.value)}
+            class="w-20 px-2 py-1 rounded bg-raised border border-edge text-fg" />
+        </div>
+
+        <div class="flex items-center gap-3 text-sm">
+          <label class="text-muted" for="cutoff">Population cutoff for #2+</label>
+          <input id="cutoff" type="number" min="500000" step="100000" value={settings.cutoff}
+            oninput={(e) => setCutoff(+e.currentTarget.value)}
+            class="w-32 px-2 py-1 rounded bg-raised border border-edge text-fg" />
+        </div>
+
         <button
           onclick={toggleShowCountry}
           class="text-sm px-3 py-1.5 rounded-lg transition-colors bg-raised hover:bg-raised-hover"
-        >
-          Country: {settings.showCountry ? 'On' : 'Off'}
-        </button>
+        >Country label: {settings.showCountry ? 'On' : 'Off'}</button>
       </div>
 
-      <!-- Total count -->
-      <p class="text-muted text-sm mb-4">{eligibleCities.length} cities selected</p>
+      <p class="text-muted text-sm mb-4">{eligibleCities.length} cities across {inPlayCodes.size} countries</p>
 
       <button
         onclick={startGame}
