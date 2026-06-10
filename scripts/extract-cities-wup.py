@@ -10,9 +10,11 @@ Methodology: contiguous urban land at >=1,500 persons/km^2, satellite-derived
 (Global Human Settlement Layer). Single consistent definition globally - not
 national administrative boundaries.
 
-Output set is the union of: every city with population >= 500,000; each
-country's single most-populous city (any size); and every national capital
-(any size).
+Output set is every 2025 urban centre with population >= 50,000 and a valid
+name. All distinct urban centres are kept (no population-based dropping);
+same-named cities in the same country are emitted separately. US/India/China
+cities additionally carry an `admin` (state/province) label resolved by
+point-in-polygon against subdivisions.json.
 
 Usage:
   pip install openpyxl
@@ -34,9 +36,16 @@ except ImportError:
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_PATH = ROOT / "src" / "lib" / "data" / "cities.json"
 COUNTRIES_PATH = ROOT / "src" / "lib" / "data" / "countries.json"
+SUBDIVISIONS_PATH = ROOT / "src" / "lib" / "data" / "subdivisions.json"
 
 YEAR = 2025
-POP_THRESHOLD = 500_000
+POP_THRESHOLD = 50_000
+
+# Countries (by ISO_A2) that get a state/province admin label.
+ADMIN_ISO2 = {"US", "IN", "CN"}
+
+# Junk UCname values to skip (case-insensitive).
+JUNK_NAMES = {"n/a", "na", "nan", "none", ""}
 
 # Sub-national / disputed-territory capitals wrongly flagged as national by GHS CapitalFlag.
 # Keyed by (common country name as emitted, city name as emitted via english_name).
@@ -105,11 +114,76 @@ def build_m49_to_iso3() -> dict[int, str]:
     return mapping
 
 
-def english_name(name: str) -> str:
+def english_name(name) -> str:
     """For names like 'Tōkyō (Tokyo)', return the parenthesized form."""
+    if name is None:
+        return ""
+    name = str(name)
     if "(" in name and ")" in name:
         return name[name.find("(") + 1 : name.find(")")].strip()
     return name.strip()
+
+
+def point_in_ring(lon: float, lat: float, ring) -> bool:
+    """Ray-casting point-in-polygon test against a single ring."""
+    inside = False
+    n = len(ring)
+    j = n - 1
+    for i in range(n):
+        xi, yi = ring[i][0], ring[i][1]
+        xj, yj = ring[j][0], ring[j][1]
+        if ((yi > lat) != (yj > lat)) and (
+            lon < (xj - xi) * (lat - yi) / (yj - yi) + xi
+        ):
+            inside = not inside
+        j = i
+    return inside
+
+
+def exterior_rings(geometry):
+    """Yield exterior rings for a Polygon or MultiPolygon (holes ignored)."""
+    gtype = geometry["type"]
+    coords = geometry["coordinates"]
+    if gtype == "Polygon":
+        # coords = [exterior, *holes]
+        yield coords[0]
+    elif gtype == "MultiPolygon":
+        # coords = [[exterior, *holes], ...]
+        for poly in coords:
+            yield poly[0]
+
+
+def build_subdivisions():
+    """Build [(iso_a2, name, [(ring, (minlon,minlat,maxlon,maxlat)), ...]), ...]
+    for US/IN/CN subdivisions, with a per-ring bbox for prefiltering."""
+    data = json.loads(SUBDIVISIONS_PATH.read_text())
+    subs = []
+    for feat in data["features"]:
+        props = feat["properties"]
+        iso2 = props.get("iso_a2")
+        if iso2 not in ADMIN_ISO2:
+            continue
+        rings = []
+        for ring in exterior_rings(feat["geometry"]):
+            lons = [p[0] for p in ring]
+            lats = [p[1] for p in ring]
+            bbox = (min(lons), min(lats), max(lons), max(lats))
+            rings.append((ring, bbox))
+        subs.append((iso2, props["name"], rings))
+    return subs
+
+
+def find_admin(lon: float, lat: float, iso2: str, subs) -> str | None:
+    """Return the name of the subdivision containing (lon, lat), or None."""
+    for sub_iso2, name, rings in subs:
+        if sub_iso2 != iso2:
+            continue
+        for ring, (minlon, minlat, maxlon, maxlat) in rings:
+            if lon < minlon or lon > maxlon or lat < minlat or lat > maxlat:
+                continue
+            if point_in_ring(lon, lat, ring):
+                return name
+    return None
 
 
 def main() -> None:
@@ -118,6 +192,10 @@ def main() -> None:
         sys.exit(1)
 
     m49_to_iso3 = build_m49_to_iso3()
+    subs = build_subdivisions()
+
+    # M49 numeric -> ISO_A2 for the three admin-labelled countries.
+    m49_to_admin_iso2 = {840: "US", 356: "IN", 156: "CN"}
 
     xlsx_path = Path(sys.argv[1])
     print(f"Reading {xlsx_path}...")
@@ -127,11 +205,21 @@ def main() -> None:
     header = next(rows)
     col = {h: i for i, h in enumerate(header)}
 
-    # First pass: collect all resolved 2025 rows; track unmatched M49 codes.
-    resolved = []  # list of (row, iso3, pop, is_capital)
+    # Single pass: emit every 2025 row with POP >= threshold and a valid name,
+    # resolved to an ISO_A3 code. Each row is a distinct urban centre
+    # (ID_UC_G0 is unique within 2025), so no merging is done.
+    cities = []
     unmatched: dict[int, str] = {}  # M49 -> UNLocName
+    admin_hit = 0
+    admin_miss = 0
     for row in rows:
         if row[col["Year"]] != YEAR:
+            continue
+        pop = row[col["POP"]]
+        if pop is None or pop < POP_THRESHOLD:
+            continue
+        name = english_name(row[col["UCname"]])
+        if name.lower() in JUNK_NAMES:
             continue
         m49_raw = row[col["UNLocID"]]
         try:
@@ -143,59 +231,42 @@ def main() -> None:
         if iso3 is None:
             unmatched[m49] = row[col["UNLocName"]]
             continue
-        pop = row[col["POP"]]
-        if pop is None:
-            continue
+
         is_capital = bool(int(row[col["CapitalFlag"]]))
         country = COUNTRY_MAP.get(row[col["UNLocName"]], row[col["UNLocName"]])
-        name = english_name(row[col["UCname"]])
         if (country, name) in SUPPRESS_CAPITAL:
             is_capital = False
-        resolved.append((row, iso3, pop, is_capital))
+
+        lat = round(row[col["Lat"]], 4)
+        lon = round(row[col["Lon"]], 4)
+
+        city = {
+            "name": name,
+            "country": country,
+            "code": iso3,
+            "id": int(row[col["ID_UC_G0"]]),
+            "population": int(round(pop)),
+            "isCapital": is_capital,
+            "lat": lat,
+            "lon": lon,
+        }
+
+        admin_iso2 = m49_to_admin_iso2.get(m49)
+        if admin_iso2 is not None:
+            admin = find_admin(lon, lat, admin_iso2, subs)
+            if admin is not None:
+                city["admin"] = admin
+                admin_hit += 1
+            else:
+                admin_miss += 1
+
+        cities.append(city)
 
     if unmatched:
         print("ERROR: unmatched M49 codes (no ISO_A3 resolution):")
         for code, name in sorted(unmatched.items(), key=lambda kv: str(kv[0])):
             print(f"  {code!r}: {name!r}")
         raise SystemExit(1)
-
-    # Determine each country's most-populous row.
-    top_by_country: dict[str, tuple] = {}
-    for entry in resolved:
-        _, iso3, pop, _ = entry
-        cur = top_by_country.get(iso3)
-        if cur is None or pop > cur[2]:
-            top_by_country[iso3] = entry
-
-    top_ids = {id(top_by_country[iso3]) for iso3 in top_by_country}
-
-    # Build output set: union of (a) >= threshold, (b) country top, (c) capital.
-    selected = []
-    for entry in resolved:
-        _, _, pop, is_capital = entry
-        if pop >= POP_THRESHOLD or is_capital or id(entry) in top_ids:
-            selected.append(entry)
-
-    # Dedupe by (code, english_name), keeping the most-populous of any
-    # same-named cities in the same country (sort desc so first-seen == largest).
-    selected.sort(key=lambda e: -e[2])
-    cities = []
-    seen = set()
-    for row, iso3, pop, is_capital in selected:
-        name = english_name(row[col["UCname"]])
-        key = (iso3, name)
-        if key in seen:
-            continue
-        seen.add(key)
-        cities.append({
-            "name": name,
-            "country": COUNTRY_MAP.get(row[col["UNLocName"]], row[col["UNLocName"]]),
-            "code": iso3,
-            "population": int(round(pop)),
-            "isCapital": is_capital,
-            "lat": round(row[col["Lat"]], 4),
-            "lon": round(row[col["Lon"]], 4),
-        })
 
     cities.sort(key=lambda c: -c["population"])
 
@@ -207,11 +278,13 @@ def main() -> None:
     codes = {c["code"] for c in cities}
     pops = [c["population"] for c in cities]
     capitals = sum(1 for c in cities if c["isCapital"])
-    print(f"  total cities:      {len(cities)}")
-    print(f"  distinct countries:{len(codes)}")
-    print(f"  capitals:          {capitals}")
-    print(f"  min population:    {min(pops)}")
-    print(f"  max population:    {max(pops)}")
+    print(f"  total cities:       {len(cities)}")
+    print(f"  distinct countries: {len(codes)}")
+    print(f"  capitals:           {capitals}")
+    print(f"  min population:     {min(pops)}")
+    print(f"  max population:     {max(pops)}")
+    print(f"  US/IN/CN with admin:{admin_hit}")
+    print(f"  US/IN/CN no admin:  {admin_miss}")
 
 
 if __name__ == "__main__":
