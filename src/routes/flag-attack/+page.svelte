@@ -53,8 +53,8 @@
   let regionCounts = $derived.by(() => {
     const counts: Record<Region, number> = {} as Record<Region, number>;
     for (const r of FLAG_REGIONS) counts[r] = 0;
-    for (const c of countryList) counts[c.region] += 1;
-    for (const s of subdivisionList) counts[s.region] += 1;
+    for (const c of countryList) if (c.region in counts) counts[c.region] += 1;
+    for (const s of subdivisionList) if (s.region in counts) counts[s.region] += 1;
     return counts;
   });
 
