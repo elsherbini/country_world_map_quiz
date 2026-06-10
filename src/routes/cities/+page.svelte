@@ -115,17 +115,17 @@
   }
 
   function setAlwaysTop(n: number) {
-    settings.alwaysTop = Math.max(0, Math.min(25, Math.floor(n) || 0));
+    settings.alwaysTop = Math.max(0, Math.floor(n) || 0);
     saveSettings();
   }
 
   function setTopN(n: number) {
-    settings.topN = Math.max(1, Math.min(25, Math.floor(n) || 1));
+    settings.topN = Math.max(1, Math.floor(n) || 1);
     saveSettings();
   }
 
   function setCutoff(n: number) {
-    settings.cutoff = Math.max(500_000, Math.floor(n) || 500_000);
+    settings.cutoff = Math.max(50_000, Math.floor(n) || 50_000);
     saveSettings();
   }
 
@@ -192,11 +192,13 @@
     if (!currentTarget) return '';
     const city = nameByKey[currentTarget];
     if (!city) return currentTarget;
-    let display = `${city.name} ${formatPopulation(city.population)}`;
-    if (settings.showCountry || duplicateNames.has(city.name)) {
-      display = `${city.name}, ${city.country} ${formatPopulation(city.population)}`;
+    let label = city.name;
+    if (settings.showCountry) {
+      label = `${city.name}, ${city.country}`;
+    } else if (duplicateNames.has(city.name)) {
+      label = city.admin ? `${city.name}, ${city.admin}` : `${city.name}, ${city.country}`;
     }
-    return display;
+    return `${label} ${formatPopulation(city.population)}`;
   }
 
   function startGame() {
@@ -287,7 +289,7 @@
         </p>
         <p>
           Coordinates are population-weighted centroids of each urban center. The dataset includes cities down to
-          500,000 people; in the game, each selected country always contributes its largest city, additional cities
+          50,000 people; in the game, each selected country always contributes its largest city, additional cities
           appear when they exceed your population cutoff, and national capitals can be included regardless of size.
         </p>
         <p class="text-sm text-muted">
@@ -297,7 +299,7 @@
         </p>
       </div>
 
-      <h3 class="text-lg font-semibold mb-3">All cities ({sortedCities.length})</h3>
+      <h3 class="text-lg font-semibold mb-3">Cities ({sortedCities.length.toLocaleString()}) — showing largest 1,000</h3>
       <table class="w-full text-sm">
         <thead class="text-muted text-left border-b border-edge">
           <tr>
@@ -308,7 +310,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each sortedCities as city, i}
+          {#each sortedCities.slice(0, 1000) as city, i}
             <tr class="border-b border-edge">
               <td class="py-1.5 pr-4 text-muted">{i + 1}</td>
               <td class="py-1.5 pr-4">{city.name}</td>
@@ -405,7 +407,7 @@
 
         <div class="flex items-center gap-3 text-sm {settings.populationMode ? '' : 'opacity-40'}">
           <label class="text-muted" for="alwaysTop">Always show top</label>
-          <input id="alwaysTop" type="number" min="0" max="25" value={settings.alwaysTop}
+          <input id="alwaysTop" type="number" min="0" value={settings.alwaysTop}
             disabled={!settings.populationMode}
             oninput={(e) => setAlwaysTop(+e.currentTarget.value)}
             class="w-20 px-2 py-1 rounded bg-raised border border-edge text-fg {settings.populationMode ? '' : 'cursor-not-allowed'}" />
@@ -414,12 +416,12 @@
 
         <div class="flex items-center gap-3 text-sm {settings.populationMode ? '' : 'opacity-40'}">
           <label class="text-muted" for="topN">…then up to</label>
-          <input id="topN" type="number" min="1" max="25" value={settings.topN}
+          <input id="topN" type="number" min="1" value={settings.topN}
             disabled={!settings.populationMode}
             oninput={(e) => setTopN(+e.currentTarget.value)}
             class="w-20 px-2 py-1 rounded bg-raised border border-edge text-fg {settings.populationMode ? '' : 'cursor-not-allowed'}" />
           <span class="text-muted">total if above</span>
-          <input id="cutoff" type="number" min="500000" step="100000" value={settings.cutoff}
+          <input id="cutoff" type="number" min="50000" step="50000" value={settings.cutoff}
             disabled={!settings.populationMode}
             oninput={(e) => setCutoff(+e.currentTarget.value)}
             class="w-32 px-2 py-1 rounded bg-raised border border-edge text-fg {settings.populationMode ? '' : 'cursor-not-allowed'}" />
