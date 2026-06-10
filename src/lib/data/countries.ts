@@ -109,6 +109,19 @@ export const ALL_REGIONS: Region[] = [
 	'germany-states'
 ];
 
+/** Regions available in Flag Attack: world countries + US states (for now). */
+export const FLAG_REGIONS: Region[] = [
+	'north-america',
+	'south-america',
+	'europe',
+	'asia',
+	'africa',
+	'oceania',
+	'small-islands',
+	'city-states',
+	'us-states'
+];
+
 const REGION_OVERRIDES: Record<string, Region> = {
 	// Caribbean large islands -> North America
 	CUB: 'north-america',
@@ -293,4 +306,26 @@ export function getSubdivisionList(): { name: string; code: string; region: Regi
 		})
 		.filter((x): x is NonNullable<typeof x> => x !== null)
 		.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Resolve a target code to a flagcdn SVG URL.
+ * - Subdivisions (e.g. "US-CA") -> https://flagcdn.com/us-ca.svg
+ * - Countries (ISO_A3, e.g. "FRA") -> look up alpha-2 -> https://flagcdn.com/fr.svg
+ * Returns null when no valid alpha-2 exists (e.g. Somaliland, N. Cyprus).
+ */
+export function getFlagUrl(code: string): string | null {
+	if (code.includes('-')) {
+		return `https://flagcdn.com/${code.toLowerCase()}.svg`;
+	}
+	const feature = countries.features.find((f) => {
+		const c = f.properties.ISO_A3_EH !== '-99' ? f.properties.ISO_A3_EH : f.properties.ISO_A3;
+		return c === code;
+	});
+	if (!feature) return null;
+	const p = feature.properties as Record<string, unknown>;
+	const a2raw = p.ISO_A2_EH && p.ISO_A2_EH !== '-99' ? p.ISO_A2_EH : p.ISO_A2;
+	const a2 = typeof a2raw === 'string' ? a2raw : '';
+	if (!a2 || a2 === '-99') return null;
+	return `https://flagcdn.com/${a2.toLowerCase()}.svg`;
 }
