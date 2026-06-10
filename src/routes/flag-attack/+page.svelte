@@ -71,6 +71,7 @@
   let currentTarget = $state<string | null>(null);
   let currentFlagUrl = $derived(currentTarget ? getFlagUrl(currentTarget) : null);
   let won = $state(false);
+  let flagZoomed = $state(false);
 
   let eligibleCountries = $state<string[]>([]);
   let remainingCountries: string[] = [];
@@ -147,6 +148,8 @@
     return a;
   }
 </script>
+
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape') flagZoomed = false; }} />
 
 {#if phase === 'setup'}
   <div class="min-h-screen bg-canvas text-fg flex items-center justify-center p-6">
@@ -225,12 +228,43 @@
         <div
           class="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-surface/95 rounded-xl shadow-lg border border-edge p-3 pointer-events-none"
         >
-          <img
-            src={currentFlagUrl}
-            alt="Flag to identify"
-            class="h-[100px] w-auto block rounded-sm"
-            loading="eager"
-          />
+          <button
+            type="button"
+            onclick={() => (flagZoomed = true)}
+            aria-label="Enlarge flag"
+            class="pointer-events-auto block cursor-zoom-in rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <img
+              src={currentFlagUrl}
+              alt="Flag to identify"
+              class="h-[100px] w-auto block rounded-sm"
+              loading="eager"
+            />
+          </button>
+        </div>
+      {/if}
+
+      {#if flagZoomed && currentFlagUrl}
+        <div class="fixed inset-0 z-30 flex items-center justify-center p-6">
+          <button
+            type="button"
+            onclick={() => (flagZoomed = false)}
+            aria-label="Close enlarged flag"
+            class="absolute inset-0 bg-black/70 cursor-zoom-out"
+          ></button>
+          <div class="relative">
+            <button
+              type="button"
+              onclick={() => (flagZoomed = false)}
+              aria-label="Close"
+              class="absolute -top-3 -right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-edge text-fg text-2xl leading-none shadow-lg hover:bg-raised-hover"
+            >×</button>
+            <img
+              src={currentFlagUrl}
+              alt="Flag to identify"
+              class="max-w-[90vw] max-h-[80vh] w-auto h-auto rounded-md shadow-2xl"
+            />
+          </div>
         </div>
       {/if}
     </div>
