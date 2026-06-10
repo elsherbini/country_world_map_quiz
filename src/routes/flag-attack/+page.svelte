@@ -1,6 +1,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import MapAttackMap from '$lib/components/MapAttackMap.svelte';
+  import ModeNav from '$lib/components/ModeNav.svelte';
   import {
     getCountryList,
     getSubdivisionList,
@@ -152,11 +153,12 @@
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape') flagZoomed = false; }} />
 
 {#if phase === 'setup'}
-  <div class="min-h-screen bg-canvas text-fg flex items-center justify-center p-6">
+  <div class="min-h-screen bg-canvas text-fg flex flex-col">
+    <ModeNav current="flag-attack" />
+    <div class="flex-1 flex items-center justify-center p-6">
     <div class="max-w-md w-full">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Flag Attack</h1>
-        <a href="{base}/" class="text-sm text-muted hover:text-fg">← Back to Learning Mode</a>
       </div>
 
       <p class="text-muted mb-4">Select regions to include, then identify every country by its flag. You have 3 lives.</p>
@@ -185,14 +187,15 @@
         Start
       </button>
     </div>
+    </div>
   </div>
 
 {:else if phase === 'playing'}
   <div class="flex flex-col h-screen bg-canvas text-fg">
+    <ModeNav current="flag-attack" onRestart={changeRegions} />
     <!-- HUD -->
     <div class="flex items-center justify-between px-4 py-2 bg-surface/90 z-10">
       <div class="flex items-center gap-4">
-        <a href="{base}/" class="text-sm text-muted hover:text-fg whitespace-nowrap">← Back to Learning Mode</a>
         <div class="text-lg font-semibold text-muted">Find this flag</div>
       </div>
       <div class="text-sm text-fg">
@@ -273,6 +276,7 @@
 {:else}
   <!-- Results overlay on top of map -->
   <div class="flex flex-col h-screen bg-canvas text-fg">
+    <ModeNav current="flag-attack" onRestart={changeRegions} />
     <div class="flex-1 relative overflow-hidden">
       <MapAttackMap
         targetCode=""
