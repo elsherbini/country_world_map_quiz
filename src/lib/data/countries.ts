@@ -136,6 +136,8 @@ const REGION_OVERRIDES: Record<string, Region> = {
 	ISL: 'europe',
 	CYP: 'europe',
 	MLT: 'europe',
+	XKX: 'europe',        // Kosovo
+	GIB: 'europe',        // Gibraltar
 	// Asian islands -> Asia
 	SGP: 'asia',
 	BRN: 'asia',
@@ -170,6 +172,10 @@ const REGION_OVERRIDES: Record<string, Region> = {
 	NFK: 'small-islands',
 	FJI: 'small-islands',
 	SLB: 'small-islands',
+	// French overseas departments (mainland S. America + island territories)
+	GUF: 'south-america', // French Guiana (mainland)
+	MTQ: 'small-islands', // Martinique
+	REU: 'small-islands', // Réunion
 	// Caribbean small islands
 	VIR: 'small-islands',
 	AIA: 'small-islands',
