@@ -38,6 +38,16 @@ COUNTRIES_PATH = ROOT / "src" / "lib" / "data" / "countries.json"
 YEAR = 2025
 POP_THRESHOLD = 500_000
 
+# Sub-national / disputed-territory capitals wrongly flagged as national by GHS CapitalFlag.
+# Keyed by (common country name as emitted, city name as emitted via english_name).
+SUPPRESS_CAPITAL = {
+    ("India", "Jammu"),
+    ("India", "Srinagar"),
+    ("Pakistan", "Muzaffarabad"),
+    ("Pakistan", "Gilgit"),
+    ("Chile", "Valparaíso"),
+}
+
 # Normalize UN long-form country names to common English.
 COUNTRY_MAP = {
     "United States of America": "United States",
@@ -137,6 +147,10 @@ def main() -> None:
         if pop is None:
             continue
         is_capital = bool(int(row[col["CapitalFlag"]]))
+        country = COUNTRY_MAP.get(row[col["UNLocName"]], row[col["UNLocName"]])
+        name = english_name(row[col["UCname"]])
+        if (country, name) in SUPPRESS_CAPITAL:
+            is_capital = False
         resolved.append((row, iso3, pop, is_capital))
 
     if unmatched:
