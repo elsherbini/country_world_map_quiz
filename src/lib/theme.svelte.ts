@@ -75,7 +75,7 @@ export interface MapColors {
 export const DEFAULT_MAP_COLORS: MapColors = {
   land: '#8b94a5',
   landBorder: '#cbd2de',
-  backdrop: '#2a3344',
+  backdrop: '#3b82f6',
   sea: '#0b0f1a',
   lake: '#0b0f1a',
   hover: '#dde2ea',
