@@ -131,6 +131,7 @@
         Regions
       </button>
       <a href="{base}/map-attack" class="text-sm text-muted hover:text-fg">Map Attack</a>
+      <a href="{base}/flag-attack" class="text-sm text-muted hover:text-fg">Flag Attack</a>
       <a href="{base}/cities" class="text-sm text-muted hover:text-fg">Cities</a>
       <a href="{base}/manage" class="text-sm text-muted hover:text-fg">Manage Countries</a>
     </div>
