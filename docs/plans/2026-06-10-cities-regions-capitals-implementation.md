@@ -60,13 +60,14 @@ PY
 **Step 1:** Edit `scripts/extract-cities-wup.py`:
 
 - Change `POP_THRESHOLD = 2_000_000` → `POP_THRESHOLD = 500_000`.
-- Add a `country → ISO_A3` resolution. **Prefer a native ISO column** if Task 1 found one (read it directly, uppercase). Otherwise add a `COUNTRY_ISO3` dict (common-English-name → ISO_A3) covering every country in the 500k set; the script must **raise SystemExit on any country with no code** (loud failure).
-- Add a curated `CAPITALS` dict: common-English-country-name → capital city name (national capitals, ~195 entries — populate from knowledge). Match a city as capital when its country matches AND its normalized name (casefold, strip accents/punctuation, via `english_name`) equals the normalized capital name. Capitals that don't match any row are collected and **printed as a warning list** at the end (NOT a hard error — sub-coverage micro-capitals are acceptably absent).
-- **Always-include rules.** Build the output as the union of, per the 2025 rows:
+- **Capital flag (native).** Task 1 confirmed `UC_STATS` has a `CapitalFlag` column (0/1; 199 capitals in 2025). Read `isCapital = bool(row[col["CapitalFlag"]])` directly. **No curated capital list is needed.**
+- **Country code via M49 → ISO_A3 join.** Task 1 confirmed there is NO ISO column — only `UNLocID` (UN **M49 numeric** code) and `UNLocName`. M49 numeric == ISO 3166-1 numeric, and `src/lib/data/countries.json` already carries numeric codes (`ISO_N3_EH`, fallback `ISO_N3`). So in the script: read `countries.json`, build a map `m49(int) → ISO_A3` from each feature's `ISO_N3_EH` (unless `-99`, else `ISO_N3`) → `ISO_A3_EH` (unless `-99`, else `ISO_A3`). Then `code = M49_TO_ISO3[int(row[col["UNLocID"]])]`. The script must **collect every `UNLocID`/`UNLocName` with no ISO_A3 match and `raise SystemExit` listing them** (loud failure) so we can add a small manual override map for any unmatched M49 codes. (M49 separates territories from parents, e.g. French Polynesia 258 → PYF — which is correct, since `getRegion('PYF')` → `small-islands`.)
+- Keep `COUNTRY_MAP` only for the human-readable `country` display name (UNLocName → common English).
+- **Always-include rules.** Build the output as the union of, per the 2025 rows that resolved to a code:
   1. every city with `POP >= 500_000`;
   2. each country's single most-populous city (any size);
-  3. every matched capital city (any size).
-  Dedupe by (country, name).
+  3. every city with `CapitalFlag == 1` (any size).
+  Dedupe by (code, name).
 - Drop `continent` and `populationTier`; the new per-row output object is:
   ```python
   {
@@ -80,13 +81,13 @@ PY
   }
   ```
 - Remove the now-unused `tier_for` and `COUNTRY_CONTINENT` (continent is no longer emitted; region is resolved at runtime). Keep `COUNTRY_MAP` and `english_name`.
-- At the end, print summary stats: total cities, distinct countries, # capitals flagged, min/max population, and the unmatched-capitals warning list.
+- At the end, print summary stats: total cities, distinct countries, # capitals flagged, min/max population.
 
-**Step 2:** Run it:
+**Step 2:** Run it (xlsx path from Task 1: `/tmp/ghswup/GHS_WUP_MTUC_MT_GLOBE_R2025A_v1_1.xlsx`):
 ```bash
-python3 scripts/extract-cities-wup.py /tmp/ghswup/<the>.xlsx
+python3 scripts/extract-cities-wup.py /tmp/ghswup/GHS_WUP_MTUC_MT_GLOBE_R2025A_v1_1.xlsx
 ```
-Expected: writes `src/lib/data/cities.json`; prints sane stats (e.g. low-thousands of cities, ~150+ countries, ~190 capitals matched, minPop reflects always-include rule ≤ 500k). Review the unmatched-capitals warning list — if a major country's capital is unmatched (not a micro-state), fix its `CAPITALS`/`COUNTRY_MAP` name and re-run.
+Expected: writes `src/lib/data/cities.json`; prints sane stats (e.g. low-thousands of cities, ~150+ countries, ~190 capitals, minPop reflects always-include rule ≤ 500k). If the script raises SystemExit on unmatched M49 codes, add a small manual `M49_OVERRIDE` dict (M49 int → ISO_A3) for those and re-run. If a country is genuinely absent from `countries.json` and has no sensible ISO_A3, drop its rows (and note it).
 
 **Step 3: Data assertions** (sanity, not committed):
 ```bash
