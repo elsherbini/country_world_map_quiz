@@ -3,6 +3,7 @@
   import * as d3 from 'd3';
   import { countries } from '$lib/data/countries';
   import { cities, cityKey } from '$lib/data/cities';
+  import { subdivisions } from '$lib/data/subdivisions';
   import { lakes } from '$lib/data/lakes';
   import { theme, getMapColors, DEFAULT_MAP_COLORS } from '$lib/theme.svelte';
 
@@ -90,6 +91,16 @@
       ctx.stroke();
     }
 
+    // Internal borders for US / India / China
+    for (const feature of subdivisions.features) {
+      if (!['US', 'IN', 'CN'].includes(feature.properties.iso_a2)) continue;
+      ctx.beginPath();
+      pathGen(feature);
+      ctx.strokeStyle = colors.subdivBorder;
+      ctx.lineWidth = 0.4;
+      ctx.stroke();
+    }
+
     // Pass 2: Lakes
     for (const feature of lakes.features) {
       ctx.beginPath();
@@ -100,7 +111,7 @@
 
     // Pass 3: City dots
     for (const city of cities) {
-      const key = cityKey(city.name, city.country);
+      const key = cityKey(city.id);
       if (!eligibleCityKeys.has(key)) continue;
 
       const projected = proj([city.lon, city.lat]);
@@ -125,7 +136,7 @@
     let closest: string | null = null;
     let closestDist = Infinity;
     for (const city of cities) {
-      const key = cityKey(city.name, city.country);
+      const key = cityKey(city.id);
       if (!eligibleCityKeys.has(key)) continue;
       const projected = proj([city.lon, city.lat]);
       if (!projected) continue;

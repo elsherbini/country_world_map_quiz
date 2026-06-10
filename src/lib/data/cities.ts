@@ -5,6 +5,8 @@ export interface CityData {
 	name: string;
 	country: string;
 	code: string;       // ISO_A3
+	id: number;         // GHS stable id
+	admin?: string;     // state/province (US/India/China only)
 	population: number;
 	isCapital: boolean;
 	lat: number;
@@ -21,14 +23,16 @@ export const CITY_REGIONS: Region[] = [
 
 export { REGION_LABELS };
 
-export function cityKey(name: string, country: string): string {
-	return `${name}::${country}`;
+export function cityKey(id: number): string {
+	return String(id);
 }
 
 export interface CityEntry {
 	name: string;
 	country: string;
 	code: string;
+	id: number;
+	admin?: string;
 	key: string;
 	region: Region;
 	population: number;
@@ -42,7 +46,9 @@ export function getCityList(): CityEntry[] {
 		name: c.name,
 		country: c.country,
 		code: c.code,
-		key: cityKey(c.name, c.country),
+		id: c.id,
+		admin: c.admin,
+		key: cityKey(c.id),
 		region: getRegion(c.code),
 		population: c.population,
 		isCapital: c.isCapital,
