@@ -15,6 +15,7 @@
     claimedCountries = new Set<string>(),
     activeSubnationalIsoA2s = [] as string[],
     studyMode = false,
+    showLabels = false,
     onCountryClick,
     onCountryHover
   }: {
@@ -22,6 +23,7 @@
     claimedCountries?: Set<string>;
     activeSubnationalIsoA2s?: string[];
     studyMode?: boolean;
+    showLabels?: boolean;
     onCountryClick?: (code: string) => void;
     onCountryHover?: (code: string | null, x: number, y: number) => void;
   } = $props();
@@ -61,6 +63,51 @@
     }
   }
 
+  // Label anchors: centroid of each feature's largest polygon (whole-feature
+  // centroids drift — France's lands in the Atlantic via French Guiana),
+  // with spherical area for priority so big features label first.
+  interface LabelPoint {
+    name: string;
+    isoA2: string;
+    point: [number, number];
+    area: number;
+  }
+
+  function largestPolygonCentroid(geom: Geometry): [number, number] {
+    if (geom.type === 'MultiPolygon') {
+      let best: Geometry = { type: 'Polygon', coordinates: geom.coordinates[0] };
+      let bestArea = -1;
+      for (const coords of geom.coordinates) {
+        const poly: Geometry = { type: 'Polygon', coordinates: coords };
+        const a = d3.geoArea(poly);
+        if (a > bestArea) {
+          bestArea = a;
+          best = poly;
+        }
+      }
+      return d3.geoCentroid(best);
+    }
+    return d3.geoCentroid(geom);
+  }
+
+  const countryLabels: LabelPoint[] = countries.features.map((f) => {
+    const p = f.properties as Record<string, unknown>;
+    const a2raw = p.ISO_A2_EH && p.ISO_A2_EH !== '-99' ? p.ISO_A2_EH : p.ISO_A2;
+    return {
+      name: f.properties.NAME,
+      isoA2: typeof a2raw === 'string' ? a2raw : '',
+      point: largestPolygonCentroid(f.geometry),
+      area: d3.geoArea(f)
+    };
+  });
+
+  const subdivisionLabels: LabelPoint[] = subdivisions.features.map((f) => ({
+    name: f.properties.name,
+    isoA2: f.properties.iso_a2,
+    point: largestPolygonCentroid(f.geometry),
+    area: d3.geoArea(f)
+  }));
+
   function buildProjection(): d3.GeoProjection {
     return d3.geoNaturalEarth1().fitExtent(
       [[10, 10], [width - 10, height - 10]],
@@ -89,6 +136,12 @@
     void theme.mode;
     void theme.highContrast;
     colors = getMapColors();
+    untrack(() => drawMap());
+  });
+
+  // Redraw when the label layer is toggled.
+  $effect(() => {
+    void showLabels;
     untrack(() => drawMap());
   });
 
@@ -162,6 +215,43 @@
       pathGen(feature);
       ctx.fillStyle = colors.lake;
       ctx.fill();
+    }
+
+    // Pass 4: Name labels (greedy collision, area priority). Countries with
+    // active subdivisions get their subdivisions labeled instead.
+    if (showLabels) {
+      const candidates = [
+        ...countryLabels.filter((l) => !activeSubnationalIsoA2s.includes(l.isoA2)),
+        ...subdivisionLabels.filter((l) => activeSubnationalIsoA2s.includes(l.isoA2))
+      ].sort((a, b) => b.area - a.area);
+
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      const placed: [number, number, number, number][] = [];
+      for (const l of candidates) {
+        const projected = proj(l.point);
+        if (!projected) continue;
+        const [px, py] = projected;
+        if (px < -10 || px > width + 10 || py < -10 || py > height + 10) continue;
+        const w = ctx.measureText(l.name).width;
+        const box: [number, number, number, number] = [px - w / 2 - 4, py - 9, px + w / 2 + 4, py + 9];
+        let collides = false;
+        for (const [a0, b0, a1, b1] of placed) {
+          if (box[0] < a1 && a0 < box[2] && box[1] < b1 && b0 < box[3]) {
+            collides = true;
+            break;
+          }
+        }
+        if (collides) continue;
+        placed.push(box);
+        ctx.strokeStyle = colors.sea;
+        ctx.lineWidth = 3;
+        ctx.strokeText(l.name, px, py);
+        ctx.fillStyle = colors.hoverBorder;
+        ctx.fillText(l.name, px, py);
+      }
+      ctx.textAlign = 'start';
     }
   }
 

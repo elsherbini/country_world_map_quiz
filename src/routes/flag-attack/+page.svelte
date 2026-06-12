@@ -145,6 +145,7 @@
   // --- Study mode ---
   let studyHover = $state<{ code: string; x: number; y: number } | null>(null);
   let studyPinned = $state<string | null>(null);
+  let showStudyLabels = $state(true);
   let flagBrowserOpen = $state(false);
 
   // Same pool as the game: selected regions, flag-resolvable targets only.
@@ -258,6 +259,14 @@
           All flags ({browseTargets.length})
         </button>
         <button
+          onclick={() => (showStudyLabels = !showStudyLabels)}
+          class="px-3 py-1.5 rounded-lg text-sm transition-colors {showStudyLabels
+            ? 'bg-accent text-accent-fg'
+            : 'bg-raised hover:bg-raised-hover'}"
+        >
+          Names: {showStudyLabels ? 'On' : 'Off'}
+        </button>
+        <button
           onclick={startGame}
           class="px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-semibold"
         >
@@ -271,6 +280,7 @@
       <MapAttackMap
         targetCode=""
         studyMode
+        showLabels={showStudyLabels}
         {activeSubnationalIsoA2s}
         onCountryClick={handleStudyClick}
         onCountryHover={handleStudyHover}
