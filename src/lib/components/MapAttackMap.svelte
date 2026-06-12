@@ -14,12 +14,16 @@
     targetCode = '',
     claimedCountries = new Set<string>(),
     activeSubnationalIsoA2s = [] as string[],
-    onCountryClick
+    studyMode = false,
+    onCountryClick,
+    onCountryHover
   }: {
     targetCode?: string;
     claimedCountries?: Set<string>;
     activeSubnationalIsoA2s?: string[];
+    studyMode?: boolean;
     onCountryClick?: (code: string) => void;
+    onCountryHover?: (code: string | null, x: number, y: number) => void;
   } = $props();
 
   let canvasEl: HTMLCanvasElement;
@@ -221,6 +225,7 @@
       hoveredCode = code;
       drawMap();
     }
+    onCountryHover?.(code, x, y);
   }
 
   function handleMouseLeave() {
@@ -228,6 +233,7 @@
       hoveredCode = null;
       drawMap();
     }
+    onCountryHover?.(null, 0, 0);
   }
 
   function handleClick(e: MouseEvent) {
@@ -239,6 +245,13 @@
     const code = findTargetAtPoint(x, y);
 
     if (!code) return; // clicked ocean
+
+    // Study mode: any feature is pinnable as-is (subdivisions stay subdivisions)
+    if (studyMode) {
+      onCountryClick?.(code);
+      return;
+    }
+
     if (claimedCountries.has(code)) return; // already claimed
 
     // If clicked a subdivision but target is a country, resolve to country level

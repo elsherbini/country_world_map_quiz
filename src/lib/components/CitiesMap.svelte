@@ -10,11 +10,15 @@
   let {
     claimedCities = new Set<string>(),
     eligibleCityKeys = new Set<string>(),
-    onCityClick
+    showLabels = false,
+    onCityClick,
+    onCityHover
   }: {
     claimedCities?: Set<string>;
     eligibleCityKeys?: Set<string>;
+    showLabels?: boolean;
     onCityClick?: (key: string) => void;
+    onCityHover?: (key: string | null, x: number, y: number) => void;
   } = $props();
 
   let canvasEl: HTMLCanvasElement;
@@ -39,6 +43,19 @@
     colors = getMapColors();
     untrack(() => drawMap());
   });
+
+  // Redraw when the label layer is toggled.
+  $effect(() => {
+    void showLabels;
+    untrack(() => drawMap());
+  });
+
+  // Eligible cities in label-priority order (largest population first).
+  let labelCities = $derived(
+    cities
+      .filter((c) => eligibleCityKeys.has(cityKey(c.id)))
+      .sort((a, b) => b.population - a.population)
+  );
 
   function buildProjection(): d3.GeoProjection {
     return d3.geoNaturalEarth1().fitExtent(
@@ -128,6 +145,37 @@
       ctx.lineWidth = hoveredKey === key ? 2 : 1;
       ctx.stroke();
     }
+
+    // Pass 4: City name labels (greedy collision, population priority).
+    // Big cities label at world zoom; zooming in spreads points so more fit.
+    if (showLabels) {
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.textBaseline = 'middle';
+      const placed: [number, number, number, number][] = [];
+      for (const city of labelCities) {
+        const projected = proj([city.lon, city.lat]);
+        if (!projected) continue;
+        const [px, py] = projected;
+        if (px < -10 || px > width + 10 || py < -10 || py > height + 10) continue;
+        const w = ctx.measureText(city.name).width;
+        const x0 = px + 7;
+        const box: [number, number, number, number] = [x0 - 4, py - 9, x0 + w + 4, py + 9];
+        let collides = false;
+        for (const [a0, b0, a1, b1] of placed) {
+          if (box[0] < a1 && a0 < box[2] && box[1] < b1 && b0 < box[3]) {
+            collides = true;
+            break;
+          }
+        }
+        if (collides) continue;
+        placed.push(box);
+        ctx.strokeStyle = colors.sea;
+        ctx.lineWidth = 3;
+        ctx.strokeText(city.name, x0, py);
+        ctx.fillStyle = colors.hoverBorder;
+        ctx.fillText(city.name, x0, py);
+      }
+    }
   }
 
   function findCityAtPoint(x: number, y: number): string | null {
@@ -160,6 +208,7 @@
       hoveredKey = key;
       drawMap();
     }
+    onCityHover?.(key, x, y);
   }
 
   function handleMouseLeave() {
@@ -167,6 +216,7 @@
       hoveredKey = null;
       drawMap();
     }
+    onCityHover?.(null, 0, 0);
   }
 
   function handleClick(e: MouseEvent) {

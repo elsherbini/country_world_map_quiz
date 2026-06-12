@@ -8,6 +8,7 @@
     ALL_REGIONS,
     REGION_LABELS,
     SUBNATIONAL_PARENT_ISO_A2,
+    getFlagUrl,
     type Region
   } from '$lib/data/countries';
 
@@ -18,9 +19,10 @@
   const subdivisionList = getSubdivisionList();
   const allTargets = [...countryList, ...subdivisionList];
   const nameByCode = Object.fromEntries(allTargets.map((c) => [c.code, c.name]));
+  const targetByCode = Object.fromEntries(allTargets.map((c) => [c.code, c]));
 
   // --- State ---
-  type Phase = 'setup' | 'playing' | 'results';
+  type Phase = 'setup' | 'study' | 'playing' | 'results';
   let phase = $state<Phase>('setup');
 
   // Region selection (persisted)
@@ -137,6 +139,26 @@
     phase = 'setup';
   }
 
+  // --- Study mode ---
+  let studyHover = $state<{ code: string; x: number; y: number } | null>(null);
+  let studyPinned = $state<string | null>(null);
+
+  let studyCount = $derived(allTargets.filter((c) => selectedRegions[c.region]).length);
+
+  function startStudy() {
+    studyHover = null;
+    studyPinned = null;
+    phase = 'study';
+  }
+
+  function handleStudyHover(code: string | null, x: number, y: number) {
+    studyHover = code ? { code, x, y } : null;
+  }
+
+  function handleStudyClick(code: string) {
+    studyPinned = studyPinned === code ? null : code;
+  }
+
   function shuffle<T>(arr: T[]): T[] {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -172,16 +194,84 @@
         {/each}
       </div>
 
-      <button
-        onclick={startGame}
-        disabled={!anyRegionSelected}
-        class="w-full py-3 rounded-lg font-semibold text-lg transition-colors {anyRegionSelected
-          ? 'bg-accent hover:bg-accent-hover text-accent-fg'
-          : 'bg-raised text-muted cursor-not-allowed'}"
-      >
-        Start
-      </button>
+      <div class="flex gap-3">
+        <button
+          onclick={startGame}
+          disabled={!anyRegionSelected}
+          class="flex-[2] py-3 rounded-lg font-semibold text-lg transition-colors {anyRegionSelected
+            ? 'bg-accent hover:bg-accent-hover text-accent-fg'
+            : 'bg-raised text-muted cursor-not-allowed'}"
+        >
+          Start
+        </button>
+        <button
+          onclick={startStudy}
+          disabled={!anyRegionSelected}
+          title="Explore the map freely — hover or tap to reveal names"
+          class="flex-1 py-3 rounded-lg font-semibold text-lg transition-colors {anyRegionSelected
+            ? 'bg-raised hover:bg-raised-hover'
+            : 'bg-raised text-muted cursor-not-allowed'}"
+        >
+          Study
+        </button>
+      </div>
     </div>
+    </div>
+  </div>
+
+{:else if phase === 'study'}
+  <div class="flex flex-col h-screen bg-canvas text-fg">
+    <ModeNav current="map-attack" onRestart={changeRegions} />
+    <!-- HUD -->
+    <div class="flex items-center justify-between gap-3 px-4 py-2 bg-surface/90 z-10">
+      <div class="text-sm text-muted">Study — hover or tap a country to see its name.</div>
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-muted">{studyCount} in quiz pool</span>
+        <button
+          onclick={startGame}
+          class="px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-semibold"
+        >
+          Start quiz
+        </button>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div class="flex-1 relative overflow-hidden">
+      <MapAttackMap
+        targetCode=""
+        studyMode
+        {activeSubnationalIsoA2s}
+        onCountryClick={handleStudyClick}
+        onCountryHover={handleStudyHover}
+      />
+      {#if studyHover && studyHover.code !== studyPinned}
+        <div
+          class="absolute pointer-events-none z-10 px-2 py-1 rounded bg-surface/95 border border-edge text-sm shadow-lg whitespace-nowrap"
+          style="left: {studyHover.x}px; top: {studyHover.y + (studyHover.y < 60 ? 18 : -12)}px; transform: translate(-50%, {studyHover.y < 60 ? '0' : '-100%'});"
+        >
+          {nameByCode[studyHover.code] ?? studyHover.code}
+        </div>
+      {/if}
+      {#if studyPinned}
+        {@const pinned = targetByCode[studyPinned]}
+        {@const pinnedFlagUrl = getFlagUrl(studyPinned)}
+        <div class="absolute bottom-4 left-4 z-10 bg-surface/95 rounded-xl shadow-lg border border-edge p-4 pr-10 max-w-xs">
+          <button
+            type="button"
+            onclick={() => (studyPinned = null)}
+            aria-label="Close"
+            class="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full text-muted hover:text-fg text-xl leading-none"
+          >×</button>
+          {#if pinnedFlagUrl}
+            <img src={pinnedFlagUrl} alt="Flag of {pinned?.name ?? studyPinned}" class="h-12 w-auto rounded-sm shadow mb-2" />
+          {/if}
+          <div class="font-semibold">{pinned?.name ?? studyPinned}</div>
+          {#if pinned}
+            <div class="text-sm text-muted">{REGION_LABELS[pinned.region]}</div>
+          {/if}
+        </div>
+      {/if}
     </div>
   </div>
 
