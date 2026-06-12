@@ -151,6 +151,9 @@
     if (showLabels) {
       ctx.font = '11px system-ui, sans-serif';
       ctx.textBaseline = 'middle';
+      // Round joins: the default miter join shoots spikes off sharp glyph
+      // corners when stroking text for the halo.
+      ctx.lineJoin = 'round';
       const placed: [number, number, number, number][] = [];
       for (const city of labelCities) {
         const projected = proj([city.lon, city.lat]);
@@ -175,6 +178,7 @@
         ctx.fillStyle = colors.hoverBorder;
         ctx.fillText(city.name, x0, py);
       }
+      ctx.lineJoin = 'miter';
     }
   }
 

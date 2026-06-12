@@ -228,6 +228,9 @@
       ctx.font = '11px system-ui, sans-serif';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
+      // Round joins: the default miter join shoots spikes off sharp glyph
+      // corners when stroking text for the halo.
+      ctx.lineJoin = 'round';
       const placed: [number, number, number, number][] = [];
       for (const l of candidates) {
         const projected = proj(l.point);
@@ -252,6 +255,7 @@
         ctx.fillText(l.name, px, py);
       }
       ctx.textAlign = 'start';
+      ctx.lineJoin = 'miter';
     }
   }
 
