@@ -10,7 +10,7 @@
     REGION_LABELS,
     type CityEntry
   } from '$lib/data/cities';
-  import { type Region } from '$lib/data/countries';
+  import { migrateRegions, type Region } from '$lib/data/countries';
 
   const STORAGE_KEY = 'cities-game-settings-v2';
   const MAX_LIVES = 3;
@@ -68,7 +68,7 @@
       const p = JSON.parse(raw);
       const d = defaultSettings();
       return {
-        regions: { ...d.regions, ...p.regions },
+        regions: migrateRegions(d.regions, p.regions),
         countries: Array.isArray(p.countries) ? p.countries : d.countries,
         populationMode: p.populationMode ?? d.populationMode,
         capitals: p.capitals ?? d.capitals,

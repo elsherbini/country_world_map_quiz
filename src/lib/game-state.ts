@@ -1,4 +1,4 @@
-import { getCountryList, getSubdivisionList, getRegion, getSubnationalRegion, type Region, ALL_REGIONS, SUBNATIONAL_REGIONS } from '$lib/data/countries';
+import { getCountryList, getSubdivisionList, getRegion, getSubnationalRegion, migrateRegions, type Region, ALL_REGIONS, SUBNATIONAL_REGIONS } from '$lib/data/countries';
 import { isSubdivisionCode } from '$lib/data/subdivisions';
 
 export interface CountryState {
@@ -29,8 +29,7 @@ export function loadGameData(): GameData {
 	if (!raw) return { countries: {}, regions: defaultRegions() };
 	try {
 		const parsed = JSON.parse(raw);
-		const defaults = defaultRegions();
-		const regions = { ...defaults, ...(parsed.regions ?? {}) };
+		const regions = migrateRegions(defaultRegions(), parsed.regions);
 		return {
 			countries: parsed.countries ?? {},
 			regions
@@ -51,7 +50,7 @@ export function getCountryState(data: GameData, code: string): CountryState | un
 function getRegionForCode(code: string): Region {
 	if (isSubdivisionCode(code)) {
 		const isoA2 = code.split('-')[0];
-		return getSubnationalRegion(isoA2) ?? 'small-islands';
+		return getSubnationalRegion(isoA2) ?? 'islands-atlantic-antarctic';
 	}
 	return getRegion(code);
 }

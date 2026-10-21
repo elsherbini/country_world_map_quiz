@@ -7,6 +7,7 @@
     getCountryList,
     getSubdivisionList,
     FLAG_REGIONS,
+    migrateRegions,
     REGION_LABELS,
     SUBNATIONAL_PARENT_ISO_A2,
     getFlagUrl,
@@ -26,18 +27,18 @@
   let phase = $state<Phase>('setup');
 
   // Region selection (persisted)
+  function defaultRegions(): Record<Region, boolean> {
+    return Object.fromEntries(FLAG_REGIONS.map((r) => [r, true])) as Record<Region, boolean>;
+  }
+
   function loadRegions(): Record<Region, boolean> {
-    if (typeof window === 'undefined') {
-      return Object.fromEntries(FLAG_REGIONS.map((r) => [r, true])) as Record<Region, boolean>;
-    }
+    if (typeof window === 'undefined') return defaultRegions();
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return Object.fromEntries(FLAG_REGIONS.map((r) => [r, true])) as Record<Region, boolean>;
-    }
+    if (!raw) return defaultRegions();
     try {
-      return JSON.parse(raw);
+      return migrateRegions(defaultRegions(), JSON.parse(raw));
     } catch {
-      return Object.fromEntries(FLAG_REGIONS.map((r) => [r, true])) as Record<Region, boolean>;
+      return defaultRegions();
     }
   }
 

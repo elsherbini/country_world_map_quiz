@@ -15,10 +15,13 @@ export interface CityData {
 
 export const cities: CityData[] = citiesData as unknown as CityData[];
 
-/** Regions available in Cities mode: the 8 non-subnational world regions. */
+/** Regions available in Cities mode: the non-subnational world regions. */
 export const CITY_REGIONS: Region[] = [
 	'north-america', 'south-america', 'europe', 'asia',
-	'africa', 'oceania', 'small-islands', 'city-states'
+	'africa', 'oceania',
+	'islands-caribbean', 'islands-oceania', 'islands-europe',
+	'islands-africa', 'islands-atlantic-antarctic',
+	'city-states'
 ];
 
 export { REGION_LABELS };

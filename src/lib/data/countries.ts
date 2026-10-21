@@ -36,7 +36,11 @@ export type Region =
 	| 'asia'
 	| 'africa'
 	| 'oceania'
-	| 'small-islands'
+	| 'islands-caribbean'
+	| 'islands-oceania'
+	| 'islands-europe'
+	| 'islands-africa'
+	| 'islands-atlantic-antarctic'
 	| 'city-states'
 	| 'us-states'
 	| 'china-provinces'
@@ -55,7 +59,11 @@ export const REGION_LABELS: Record<Region, string> = {
 	asia: 'Asia',
 	africa: 'Africa',
 	oceania: 'Oceania',
-	'small-islands': 'Small Islands',
+	'islands-caribbean': 'Islands: Caribbean',
+	'islands-oceania': 'Islands: Oceania',
+	'islands-europe': 'Islands: Europe',
+	'islands-africa': 'Islands: Africa',
+	'islands-atlantic-antarctic': 'Islands: Atlantic & Antarctic',
 	'city-states': 'City-states',
 	'us-states': 'US States',
 	'china-provinces': 'Chinese Provinces',
@@ -76,7 +84,11 @@ export const REGION_COLORS: Record<Region, string> = {
 	asia: '#fb7185',
 	africa: '#4ade80',
 	oceania: '#c084fc',
-	'small-islands': '#22d3ee',
+	'islands-caribbean': '#22d3ee',
+	'islands-oceania': '#a78bfa',
+	'islands-europe': '#93c5fd',
+	'islands-africa': '#86efac',
+	'islands-atlantic-antarctic': '#94a3b8',
 	'city-states': '#fb923c',
 	'us-states': '#4ade80',
 	'china-provinces': '#4ade80',
@@ -96,7 +108,11 @@ export const ALL_REGIONS: Region[] = [
 	'asia',
 	'africa',
 	'oceania',
-	'small-islands',
+	'islands-caribbean',
+	'islands-oceania',
+	'islands-europe',
+	'islands-africa',
+	'islands-atlantic-antarctic',
 	'city-states',
 	'us-states',
 	'china-provinces',
@@ -117,7 +133,11 @@ export const FLAG_REGIONS: Region[] = [
 	'asia',
 	'africa',
 	'oceania',
-	'small-islands',
+	'islands-caribbean',
+	'islands-oceania',
+	'islands-europe',
+	'islands-africa',
+	'islands-atlantic-antarctic',
 	'city-states',
 	'us-states'
 ];
@@ -150,75 +170,76 @@ const REGION_OVERRIDES: Record<string, Region> = {
 	SMR: 'city-states',
 	HKG: 'city-states',
 	MAC: 'city-states',
-	// Small island nations (Oceania except AUS/NZL/PNG)
-	VUT: 'small-islands',
-	FSM: 'small-islands',
-	MHL: 'small-islands',
-	MNP: 'small-islands',
-	GUM: 'small-islands',
-	ASM: 'small-islands',
-	TON: 'small-islands',
-	WSM: 'small-islands',
-	PLW: 'small-islands',
-	NIU: 'small-islands',
-	COK: 'small-islands',
-	NRU: 'small-islands',
-	KIR: 'small-islands',
-	TUV: 'small-islands',
-	PYF: 'small-islands',
-	NCL: 'small-islands',
-	WLF: 'small-islands',
-	PCN: 'small-islands',
-	NFK: 'small-islands',
-	FJI: 'small-islands',
-	SLB: 'small-islands',
-	// French overseas departments (mainland S. America + island territories)
+	// Maldives: sovereign South Asian island state -> mainland Asia (like SGP/BRN/BHR)
+	MDV: 'asia',
+	// Islands: Oceania (Pacific, excluding AUS/NZL/PNG)
+	VUT: 'islands-oceania',
+	FSM: 'islands-oceania',
+	MHL: 'islands-oceania',
+	MNP: 'islands-oceania',
+	GUM: 'islands-oceania',
+	ASM: 'islands-oceania',
+	TON: 'islands-oceania',
+	WSM: 'islands-oceania',
+	PLW: 'islands-oceania',
+	NIU: 'islands-oceania',
+	COK: 'islands-oceania',
+	NRU: 'islands-oceania',
+	KIR: 'islands-oceania',
+	TUV: 'islands-oceania',
+	PYF: 'islands-oceania',
+	NCL: 'islands-oceania',
+	WLF: 'islands-oceania',
+	PCN: 'islands-oceania',
+	NFK: 'islands-oceania',
+	FJI: 'islands-oceania',
+	SLB: 'islands-oceania',
+	// French overseas departments
 	GUF: 'south-america', // French Guiana (mainland)
-	MTQ: 'small-islands', // Martinique
-	REU: 'small-islands', // Réunion
-	// Caribbean small islands
-	VIR: 'small-islands',
-	AIA: 'small-islands',
-	CYM: 'small-islands',
-	BMU: 'small-islands',
-	VGB: 'small-islands',
-	TCA: 'small-islands',
-	MSR: 'small-islands',
-	SPM: 'small-islands',
-	MAF: 'small-islands',
-	BLM: 'small-islands',
-	ABW: 'small-islands',
-	CUW: 'small-islands',
-	SXM: 'small-islands',
-	TTO: 'small-islands',
-	BRB: 'small-islands',
-	GRD: 'small-islands',
-	VCT: 'small-islands',
-	LCA: 'small-islands',
-	KNA: 'small-islands',
-	DMA: 'small-islands',
-	ATG: 'small-islands',
-	// Indian Ocean / Seven seas / Atlantic islands
-	SGS: 'small-islands',
-	IOT: 'small-islands',
-	SHN: 'small-islands',
-	SYC: 'small-islands',
-	MUS: 'small-islands',
-	MDV: 'small-islands',
-	COM: 'small-islands',
-	MYT: 'small-islands',
-	ATF: 'small-islands',
-	HMD: 'small-islands',
-	STP: 'small-islands',
-	FLK: 'small-islands',
-	// European crown dependencies / territories
-	FRO: 'small-islands',
-	ALA: 'small-islands',
-	JEY: 'small-islands',
-	GGY: 'small-islands',
-	IMN: 'small-islands',
-	// Antarctica
-	ATA: 'small-islands'
+	MTQ: 'islands-caribbean', // Martinique
+	REU: 'islands-africa', // Réunion
+	MYT: 'islands-africa', // Mayotte
+	// Islands: Caribbean
+	VIR: 'islands-caribbean',
+	AIA: 'islands-caribbean',
+	CYM: 'islands-caribbean',
+	VGB: 'islands-caribbean',
+	TCA: 'islands-caribbean',
+	MSR: 'islands-caribbean',
+	MAF: 'islands-caribbean',
+	BLM: 'islands-caribbean',
+	ABW: 'islands-caribbean',
+	CUW: 'islands-caribbean',
+	SXM: 'islands-caribbean',
+	TTO: 'islands-caribbean',
+	BRB: 'islands-caribbean',
+	GRD: 'islands-caribbean',
+	VCT: 'islands-caribbean',
+	LCA: 'islands-caribbean',
+	KNA: 'islands-caribbean',
+	DMA: 'islands-caribbean',
+	ATG: 'islands-caribbean',
+	// Islands: Africa (Indian Ocean + Gulf of Guinea + South Atlantic)
+	SYC: 'islands-africa',
+	MUS: 'islands-africa',
+	COM: 'islands-africa',
+	STP: 'islands-africa',
+	SHN: 'islands-africa',
+	IOT: 'islands-africa',
+	// Islands: Atlantic & Antarctic
+	BMU: 'islands-atlantic-antarctic',
+	SPM: 'islands-atlantic-antarctic',
+	FLK: 'islands-atlantic-antarctic',
+	SGS: 'islands-atlantic-antarctic',
+	ATF: 'islands-atlantic-antarctic',
+	HMD: 'islands-atlantic-antarctic',
+	ATA: 'islands-atlantic-antarctic',
+	// Islands: Europe (crown dependencies / autonomous territories)
+	FRO: 'islands-europe',
+	ALA: 'islands-europe',
+	JEY: 'islands-europe',
+	GGY: 'islands-europe',
+	IMN: 'islands-europe'
 };
 
 const CONTINENT_TO_REGION: Record<string, Region> = {
@@ -228,8 +249,8 @@ const CONTINENT_TO_REGION: Record<string, Region> = {
 	Asia: 'asia',
 	Africa: 'africa',
 	Oceania: 'oceania',
-	'Seven seas (open ocean)': 'small-islands',
-	Antarctica: 'small-islands'
+	'Seven seas (open ocean)': 'islands-atlantic-antarctic',
+	Antarctica: 'islands-atlantic-antarctic'
 };
 
 export function getRegion(code: string): Region {
@@ -238,8 +259,40 @@ export function getRegion(code: string): Region {
 		const c = f.properties.ISO_A3_EH !== '-99' ? f.properties.ISO_A3_EH : f.properties.ISO_A3;
 		return c === code;
 	});
-	if (!feature) return 'small-islands';
-	return CONTINENT_TO_REGION[feature.properties.CONTINENT] ?? 'small-islands';
+	if (!feature) return 'islands-atlantic-antarctic';
+	return CONTINENT_TO_REGION[feature.properties.CONTINENT] ?? 'islands-atlantic-antarctic';
+}
+
+/** Regions that replaced the former single `small-islands` region. */
+export const ISLAND_REGIONS: Region[] = [
+	'islands-caribbean',
+	'islands-oceania',
+	'islands-europe',
+	'islands-africa',
+	'islands-atlantic-antarctic'
+];
+
+/**
+ * Merge a stored region-toggle map over `defaults`, migrating the legacy
+ * `small-islands` key: its value is copied onto every island region that the
+ * stored map does not already set, then the key is dropped.
+ */
+export function migrateRegions(
+	defaults: Record<Region, boolean>,
+	stored: unknown
+): Record<Region, boolean> {
+	const src = (stored && typeof stored === 'object' ? stored : {}) as Record<string, unknown>;
+	const out: Record<string, boolean> = { ...defaults };
+	for (const [k, v] of Object.entries(src)) {
+		if (k in defaults && typeof v === 'boolean') out[k] = v;
+	}
+	const legacy = src['small-islands'];
+	if (typeof legacy === 'boolean') {
+		for (const r of ISLAND_REGIONS) {
+			if (r in defaults && typeof src[r] !== 'boolean') out[r] = legacy;
+		}
+	}
+	return out as Record<Region, boolean>;
 }
 
 /** Maps subnational region to parent country ISO alpha-2 code */
